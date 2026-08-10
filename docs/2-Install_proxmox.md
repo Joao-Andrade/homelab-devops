@@ -15,7 +15,7 @@ During the installation process, it asks for some configuration. I choose to ins
 
 ![2-install-proxmox-1](./images/2-install-proxmox-1.png)
 
-In here be carefull about the SSD choosen, as it will remove everything inside the SSD.
+In here be careful about the SSD chosen, as it will remove everything inside the SSD.
 
 I don't worry about the options and filesystem type because I am just using this SSD for Proxmox, but if you have a different setup, it might be worth checking it out.
 
@@ -48,14 +48,14 @@ Here's the list of changes I made next:
 
 ## 1 - Run proxmox script to update repositories and disable enterprise repositories
 
-Once logged in, a pop up will appear indicating that there is no valid subscription. This is because we are using the community edition and not the enterprise edition. This is related to updates and we need to change from using the enterprise repositories to the comunity repositories. 
+Once logged in, a pop up will appear indicating that there is no valid subscription. This is because we are using the community edition and not the enterprise edition. This is related to updates and we need to change from using the enterprise repositories to the community repositories. 
 
-To do this, on the server view at the right, choose the node (for me it is pve01), then navigate to Updates -> Repositories. The menu will show a list of repositories from with it gets updates from. For the repositories that has enterprise on the components collumn, disable. Click on Add to add a repository and select the no-subscription option.
+To do this, on the server view at the right, choose the node (for me it is pve01), then navigate to Updates -> Repositories. The menu will show a list of repositories from with it gets updates from. For the repositories that has enterprise on the components column, disable. Click on Add to add a repository and select the no-subscription option.
 
 ![2-install-proxmox-5](./images/2-install-proxmox-5.png)
 
 Via script:
- - The script is from this website: [Post-install script](https://community-scripts.org/scripts/post-pve-install
+ - The script is from this website: [Post-install script](https://community-scripts.org/scripts/post-pve-install)
  - Access the node console by clicking on the node and then click on the shell button at the top or the shell option on the sidebar.
 
 ![2-install-proxmox-6](./images/2-install-proxmox-6.png)
@@ -74,14 +74,14 @@ This may be optional since the previous step already updates Proxmox, but if you
 
 Access the node console by clicking on the node and then click on the Console button at the top and run the commands:
 
-- `apt get update`
-- `apt get upgrade`
+- `apt update`
+- `apt upgrade`
 
 ## 3 - Disable root login with password on console and access via SSH key
 
 One thing I want to do is to not use the root account as much as I can. In a real environment, I would create a dedicated user and group with specific permissions, but since this is my personal homelab and only I will use it, I will just disable the root access via password when ssh, and require a ssh key.
 
-To do this the first thing to do is create an ssh private and publc key. On windows, it is possible to do with PuttyGen, but I am on Linux, so the command to do this is `ssh-keygen -t ed25519 -C "someemail@thisisacomment.com"`. The -C and emals is optional, just a comment to identify the key, but it is good practice to add it, because it helps identifying who accessed and when. The -t is for the type of key, and ed25519 is a modern and secure algorithm.
+To do this the first thing to do is create an ssh private and public key. On windows, it is possible to do with PuttyGen, but I am on Linux, so the command to do this is `ssh-keygen -t ed25519 -C "someemail@thisisacomment.com"`. The -C and emails is optional, just a comment to identify the key, but it is good practice to add it, because it helps identifying who accessed and when. The -t is for the type of key, and ed25519 is a modern and secure algorithm.
 
 When the command is run, it will ask a couple of questions. The file location and the pass, which is optional. Then on the file location it will appear two files, the private key, for example `abcd_key` and the public key `abcd_key.pub`.
 
@@ -104,7 +104,7 @@ If want to do it via script, here it is, just replace the ssh public key:
 set -e
 
 # Variables
-SSH_PUBLIC_KEY="ssh-ed25519 aaaabbbbcccc myemail@some.com"
+SSH_PUBLIC_KEY="ssh-ed25519 aaaabbbbcccc some@gmail.com"
 
 # Add ssh public key
 mkdir -p /root/.ssh
@@ -189,7 +189,8 @@ To create the role, go to Datacenter -> Permissions -> Roles and click on Create
 The list of previledges is:
 
 - Datastore.AllocateSpace
-- Datastore.Audit Pool.Allocate
+- Datastore.Audit
+- Pool.Allocate
 - SDN.Use
 - Sys.Audit
 - Sys.Console
@@ -207,7 +208,7 @@ The list of previledges is:
 - VM.Config.Network
 - VM.Config.Options
 - VM.Migrate
-- VM.Monitor
+- VM.Console
 - VM.PowerMgmt
 
 ![2-install-proxmox-12](./images/2-install-proxmox-12.png)
@@ -224,7 +225,7 @@ To create the user, go to Datacenter -> Permissions -> Users and create a terraf
 
 ![2-install-proxmox-15](./images/2-install-proxmox-15.png)
 
-FInally it is necessary to create an API Token so it can be used by terraform. On Datacenter -> Permissions -> API Tokens, click on create button and fill the form with a token name. Copy the generated token for when it is nedded.
+It is necessary to create an API Token so it can be used by terraform. On Datacenter -> Permissions -> API Tokens, click on create button and fill the form with a token name. Copy the generated token for when it is needed.
 
 ![2-install-proxmox-16](./images/2-install-proxmox-16.png)
 
@@ -245,8 +246,7 @@ REALNAME="pve"
 COMMENT="Terraform service account"
 FIRSTNAME="Terraform"
 LASTNAME="Account"
-PREVILEDGES="Datastore.Allocate \
-Datastore.AllocateSpace \
+PREVILEDGES="Datastore.AllocateSpace \
 Datastore.Audit \
 Pool.Allocate \
 SDN.Use \
@@ -258,8 +258,8 @@ VM.Allocate \
 VM.Audit \
 VM.Clone \
 VM.Config.CDROM \
-VM.Config.Cloudinit \
 VM.Config.CPU \
+VM.Config.Cloudinit \
 VM.Config.Disk \
 VM.Config.HWType \
 VM.Config.Memory \
@@ -349,7 +349,7 @@ I only have one SSD that I can use on my server, but if I had more or a NAS serv
 
 # Next steps
 
-Now that I have Proxmox installed and configured, I can start creating the VMs and LXCs. Next step will be to create the VMs and LXCs as planned. I will use terraform and Ansible to create and configure them, although I will try to explain how to create them using the Proxmox web UI as well. Check [3 - Create and configure VMs and LXC](./3-Create_and_conf_VMs_LXC.md) for the next step.
+Now that I have Proxmox installed and configured, I can start creating the VMs and LXCs. Next step will be to create the VMs and LXCs as planned. I will use terraform and Ansible to create and configure them, although I will try to explain how to create them using the Proxmox web UI as well. Check [3 - Create and configure LXCs](./3-Create_and_conf_LXCs.md) for the next step.
 
 # Articles:
 
@@ -357,5 +357,5 @@ Heres the full list of articles of this series:
 
  - [1 - Architecture and Hardware](./1-Architecture_and_hardware.md)
  - [2 - Install Proxmox](./2-Install_proxmox.md)
- - [3 - Create and configure LXC](./3-Create_and_conf_LXC.md)
+ - [3 - Create and configure LXCs](./3-Create_and_conf_LXCs.md)
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)

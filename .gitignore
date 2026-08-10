@@ -47,4 +47,4 @@ dont_upload
 
 .DS_Store
 
-*.bkp
+.$*.bkp

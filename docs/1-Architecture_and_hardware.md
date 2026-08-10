@@ -1,8 +1,8 @@
 # Introduction
 
-When I started working, I got my first experience on creating a CICD pipeline and that was something I really enjoyed doing it. Because of that I started to steer my professional carreer towards DevOps. I learned a bit about everything that surrounds it, from CICD, IaC, monitoring, managing clusters, networking and so on. But no matter what, there is always some new tool, or old tool that I never got the opportunity to work with, that I should know as DevOps.
+When I started working, I got my first experience on creating a CICD pipeline and that was something I really enjoyed doing it. Because of that I started to steer my professional career towards DevOps. I learned a bit about everything that surrounds it, from CICD, IaC, monitoring, managing clusters, networking and so on. But no matter what, there is always some new tool, or old tool that I never got the opportunity to work with, that I should know as DevOps.
 
-Because of that I started to wonder what I could do to learn those tools in a safe environment, but also one that looks semi-professional and simulates a real environment instead of just creating Docker containers or installing MiniKube on my own machine. I though about doing that on AWS, but cloud providers have a problem, which is that it costs money, and even if I try to go with free tiers or always free options and set budgets, eventually I could make a mistake that could cost me a lot of money, and I cannot afford that. So the only viable option I though of is to create a homelab. That way, outside of electric bill, I can have full control of everything, hardware costs and software I use.
+Because of that I started to wonder what I could do to learn those tools in a safe environment, but also one that looks semi-professional and simulates a real environment instead of just creating Docker containers or installing MiniKube on my own machine. I thought about doing that on AWS, but cloud providers have a problem, which is that it costs money, and even if I try to go with free tiers or always free options and set budgets, eventually I could make a mistake that could cost me a lot of money, and I cannot afford that. So the only viable option I thought of is to create a homelab. That way, outside of electric bill, I can have full control of everything, hardware costs and software I use.
 
 As the price of computer components are increasing almost every month, I cannot afford to buy a few servers to build the homelab, so I decided to buy just one and start from there. Because I want to create a few VMs and want to play around with Kubernetes and multiple containers, I bought a miniPC called "GMKtec Ultra M5" with 8 cores, 16GB RAM and 500GB, although I decided to later on upgrade to 32 GB RAM and an additional 1 TB SSD just to have a bit more room to work with.
 
@@ -28,11 +28,11 @@ Here's the high level architecture of the homelab:
 
 ![Architecture](./images/1-high-level-architecture.png)
 
-As it is possible to see on the image, the total vCPUs used are 12, the total of RAM is 21 GB and the maximum storage used is 590 GB, which gives leaves 4 vCPUs, 11 GB RAM and 410 GB free space to be used by Proxmox itself or so I can use to experiment some new VM or LXC.
+As it is possible to see on the image, the total vCPUs used are 12, the total of RAM is 21 GB and the maximum storage used is 590 GB, which leaves 4 vCPUs, 11 GB RAM and 410 GB free space to be used by Proxmox itself or so I can use to experiment some new VM or LXC.
 
 ## Network
 
-As far as networking, this is the diagram with the IPs I reserved on the router for each VM and LXC.
+As far as networking, this is the table with the IPs I reserved on the router for each VM and LXC.
 
 | What                             | MAC                  | IP              |
 | -------------------------------- | -------------------- | --------------- |
@@ -40,14 +40,14 @@ As far as networking, this is the diagram with the IPs I reserved on the router 
 | └─ nic0                          | `xx:xx:xx:xx:xx:xx`  | `192.168.1.70`  |
 | └─ nic1                          | `yy:yy:yy:yy:yy:yy`  | `192.168.1.71`  |
 | **LXC**                          | -                    | -               |
-| └─ nginx01                       | `02:00:00:00:01:a1`  | `192.168.1.80`  |
-| └─ management-node               | `02:00:00:00:01:a2`  | `192.168.1.81`  |
+| └─ management-node               | `02:00:00:00:01:a1`  | `192.168.1.80`  |
+| └─ nginx01                       | `02:00:00:00:01:a2`  | `192.168.1.81`  |
 | **VM**                           | -                    | -               |
 | └─ k3s-cp01                      | `02:00:00:00:02:a1`  | `192.168.1.90`  |
 | └─ k3s-wk01                      | `02:00:00:00:02:a2`  | `192.168.1.91`  |
 | └─ k3s-wk02                      | `02:00:00:00:02:a3`  | `192.168.1.92`  |
 
-There are two nic, because the miniPC has two ethernet ports. I placed xx and yy on MAC because it is not relevant for this homelab. The other ones start with 02, because it is a locally managed MAC prefix, which is usefull when creating VMs and LXCs, to avoid using a real MAC address. Feel free to use other values or let Proxmox generate one and then adapting the reserved IPs on the router to match the generated MAC.
+There are two nic, because the miniPC has two ethernet ports. I placed xx and yy on MAC because it is not relevant for this homelab. The other ones start with 02, because it is a locally managed MAC prefix, which is useful when creating VMs and LXCs, to avoid using a real MAC address. Feel free to use other values or let Proxmox generate one and then adapting the reserved IPs on the router to match the generated MAC.
 
 ## CI/CD
 
@@ -89,7 +89,7 @@ I used Proxmox. The main reasons are it is free and open-source, it is widely re
  - Hashicorp Vault
    - Very complete package, it is used by a lot of companies, but some features are hidden behind a enterprise license. Since I just want to store credentials and don't need all the features, like the namespaces, it should be fine.
  - OpenBao
-   - It is a fork of Hashicorp Vault. It doesn't have all the features of Vault yet, altough there is a roadmap where they plan on implement some missing features.
+   - It is a fork of Hashicorp Vault. It doesn't have all the features of Vault yet, although there is a roadmap where they plan on implement some missing features.
 
 ### CI (Continuous integration, so when a new commit is done on the repos, the workflow runs):
  - Jenkins
@@ -101,26 +101,26 @@ I used Proxmox. The main reasons are it is free and open-source, it is widely re
 
 ### Code quality and security scans (To scan for issues or vulnerabilities on the code):
  - Sonarqube
-  - Scans the code for bugs, code smells and technical debt.
+   - Scans the code for bugs, code smells and technical debt.
  - Trivy
-  - Scans images for vulnerabilities.
+   - Scans images for vulnerabilities.
  - Semgrep
-  - Scans for security vulnerabilities.
+   - Scans for security vulnerabilities.
 
 ### CD (Continuous deployment, to deploy new versions of the applications):
  - ArgoCD
-  - GitOps tool to deploy to kubernetes based on the repositories.
+   - GitOps tool to deploy to kubernetes based on the repositories.
 
 ### Observability (To monitor the cluster and proxmox):
  - Prometheus and Grafana
-  - Prometheus gathers various metrics from the cluster, for example cpu and memory of each pod.
-  - Grafana is a visualization tool.
+   - Prometheus gathers various metrics from the cluster, for example cpu and memory of each pod.
+   - Grafana is a visualization tool.
  - Loki
-  - Loki is a log agreggator.
+   - Loki is a log aggregator.
  - Jaegar
-  - Jaegar is used for tracing.
+   - Jaegar is used for tracing.
  - SigNoz
-  - SigNoz is a complete package that does all of the above.
+   - SigNoz is a complete package that does all of the above.
 
 ### Alerting:
  - AlertManager
@@ -128,7 +128,7 @@ I used Proxmox. The main reasons are it is free and open-source, it is widely re
 
 # Next steps
 
-Now that it is possible to understand what I want to do and a high level view of the arquitecture of the homelab, we can start actually building it. On the next chapter, [Install Proxmox](./2-Install_proxmox.md), we will install Proxmox on the Mini PC and set up the network configuration.
+Now that it is possible to understand what I want to do and a high level view of the architecture of the homelab, we can start actually building it. On the next chapter, [Install Proxmox](./2-Install_proxmox.md), we will install Proxmox on the Mini PC and set up the network configuration.
 
 # Articles:
 
@@ -136,5 +136,5 @@ Heres the full list of articles of this series:
 
  - [1 - Architecture and Hardware](./1-Architecture_and_hardware.md)
  - [2 - Install Proxmox](./2-Install_proxmox.md)
- - [3 - Create and configure LXC](./3-Create_and_conf_LXC.md)
+ - [3 - Create and configure LXCs](./3-Create_and_conf_LXCs.md)
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
