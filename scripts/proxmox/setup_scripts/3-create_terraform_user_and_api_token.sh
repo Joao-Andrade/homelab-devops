@@ -8,7 +8,7 @@ USERNAME="terraform"
 GROUPNAME="terraformGroup"
 ROLENAME="terraformRole"
 APITOKENNAME="terraformToken"
-REALNAME="pve"
+REALMNAME="pve"
 COMMENT="Terraform service account"
 FIRSTNAME="Terraform"
 LASTNAME="Account"
@@ -36,21 +36,20 @@ VM.Console \
 VM.Migrate \
 VM.PowerMgmt"
 
-# ---- Create Role
+echo "Creating role $ROLENAME"
 pveum role add $ROLENAME --privs "$PREVILEDGES"
 
-# ---- Create group
-
+echo "Creating group $GROUPNAME"
 pveum group add $GROUPNAME
 
-# ---- Create User
+echo "Creating user $USERNAME@$REALMNAME"
+pveum user add $USERNAME@$REALMNAME --comment "$COMMENT" --firstname $FIRSTNAME --lastname $LASTNAME --groups $GROUPNAME
 
-pveum user add $USERNAME@$REALNAME --comment "$COMMENT" --firstname $FIRSTNAME --lastname $LASTNAME --groups $GROUPNAME
-
-# ---- Set permission
-
+echo "Setting role permissions $ROLENAME for group $GROUPNAME"
 pveum acl modify / --role $ROLENAME --group $GROUPNAME
 
-# ---- Set API Token
+echo "Creating api token $APITOKENNAME for user $USERNAME@$REALMNAME"
+pveum user token add $USERNAME@$REALMNAME $APITOKENNAME
 
-pveum user token add $USERNAME@$REALNAME $APITOKENNAME
+echo "Setting role permissions $ROLENAME for api token $APITOKENNAME"
+pveum acl modify / --role $ROLENAME --token $USERNAME@$REALMNAME!$APITOKENNAME

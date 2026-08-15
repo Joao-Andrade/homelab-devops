@@ -45,6 +45,7 @@ Here's the list of changes I made next:
 4. [Create a proxmox user so it is not needed to access web UI with root](#4---create-a-proxmox-user-so-it-is-not-needed-to-access-web-ui-with-root)
 5. [Create a terraform user and api token](#5---create-a-terraform-user-and-api-token)
 6. [Prepare some ISOs and Templates](#6---prepare-some-isos-and-templates)
+7. [Prepare firewall configurations at datacenter level](#7---prepare-firewall-configurations-at-datacenter-level)
 
 ## 1 - Run proxmox script to update repositories and disable enterprise repositories
 
@@ -104,18 +105,22 @@ If want to do it via script, here it is, just replace the ssh public key:
 set -e
 
 # Variables
-SSH_PUBLIC_KEY="ssh-ed25519 aaaabbbbcccc some@gmail.com"
+SSH_PUBLIC_KEY="ssh-ed25519 aaaa some@gmail.com"
 
-# Add ssh public key
+echo "Adding ssh public key to root authorized keys"
+
 mkdir -p /root/.ssh
 echo "$SSH_PUBLIC_KEY" > /root/.ssh/authorized_keys
 chmod 600 /root/.ssh/authorized_keys
 chown -R root:root /root/.ssh
 
-# No password login
+echo "Updating hardening config file to disable root password login"
+
 cat > /etc/ssh/sshd_config.d/hardening.conf <<EOF
 PermitRootLogin prohibit-password
 EOF
+
+echo "Restarting ssh daemon"
 
 sshd -t && systemctl restart ssh
 ```
@@ -154,25 +159,27 @@ Alternatively, by script, this can be done like so, just replace the variables v
 ```bash
 #!/bin/bash
 
+# This script adds a group and a user to Proxmox
+# It also allows to access Proxmox via SSH
 set -e
 
 # Variables
-USERNAME="user_a"
-GROUPNAME="group_a"
-PASSWORD="password_a"
-REALNAME="pve"
-EMAIL="someemail@provider.com"
+USERNAME="aaaa"
+GROUPNAME="administrators"
+PASSWORD="aaa"
+REALMNAME="pve"
+EMAIL="EMAIL_ADDRESS"
 COMMENT="Proxmox Administrator user"
-FIRSTNAME="Firstname"
-LASTNAME="Lastname"
+FIRSTNAME="aaa"
+LASTNAME="aaa"
 
-# ---- Create group
+echo "Creating group $GROUPNAME"
 pveum group add $GROUPNAME
 
-# ---- Create User
-pveum user add $USERNAME@$REALNAME --password $PASSWORD --comment "$COMMENT" --email $EMAIL --firstname $FIRSTNAME --lastname $LASTNAME --groups $GROUPNAME
+echo "Creating user $USERNAME@$REALMNAME"
+pveum user add $USERNAME@$REALMNAME --password $PASSWORD --comment "$COMMENT" --email $EMAIL --firstname $FIRSTNAME --lastname $LASTNAME --groups $GROUPNAME
 
-# ---- Set permission
+echo "Setting administrator permissions for group $GROUPNAME"
 pveum acl modify / --role Administrator --group $GROUPNAME
 ```
 
@@ -188,6 +195,7 @@ To create the role, go to Datacenter -> Permissions -> Roles and click on Create
 
 The list of previledges is:
 
+- Datastore.Allocate
 - Datastore.AllocateSpace
 - Datastore.Audit
 - Pool.Allocate
@@ -242,11 +250,12 @@ USERNAME="terraform"
 GROUPNAME="terraformGroup"
 ROLENAME="terraformRole"
 APITOKENNAME="terraformToken"
-REALNAME="pve"
+REALMNAME="pve"
 COMMENT="Terraform service account"
 FIRSTNAME="Terraform"
 LASTNAME="Account"
-PREVILEDGES="Datastore.AllocateSpace \
+PREVILEDGES="Datastore.Allocate \
+Datastore.AllocateSpace \
 Datastore.Audit \
 Pool.Allocate \
 SDN.Use \
@@ -258,8 +267,8 @@ VM.Allocate \
 VM.Audit \
 VM.Clone \
 VM.Config.CDROM \
-VM.Config.CPU \
 VM.Config.Cloudinit \
+VM.Config.CPU \
 VM.Config.Disk \
 VM.Config.HWType \
 VM.Config.Memory \
@@ -269,36 +278,34 @@ VM.Console \
 VM.Migrate \
 VM.PowerMgmt"
 
-# ---- Create Role
+echo "Creating role $ROLENAME"
 pveum role add $ROLENAME --privs "$PREVILEDGES"
 
-# ---- Create group
-
+echo "Creating group $GROUPNAME"
 pveum group add $GROUPNAME
 
-# ---- Create User
+echo "Creating user $USERNAME@$REALMNAME"
+pveum user add $USERNAME@$REALMNAME --comment "$COMMENT" --firstname $FIRSTNAME --lastname $LASTNAME --groups $GROUPNAME
 
-pveum user add $USERNAME@$REALNAME --comment "$COMMENT" --firstname $FIRSTNAME --lastname $LASTNAME --groups $GROUPNAME
-
-# ---- Set permission
-
+echo "Setting role permissions $ROLENAME for group $GROUPNAME"
 pveum acl modify / --role $ROLENAME --group $GROUPNAME
 
-# ---- Set API Token
+echo "Creating api token $APITOKENNAME for user $USERNAME@$REALMNAME"
+pveum user token add $USERNAME@$REALMNAME $APITOKENNAME
 
-pveum user token add $USERNAME@$REALNAME $APITOKENNAME
-
+echo "Setting role permissions $ROLENAME for api token $APITOKENNAME"
+pveum acl modify / --role $ROLENAME --token $USERNAME@$REALMNAME!$APITOKENNAME
 ```
 
 ## 6 - prepare some ISOs and Templates
 
 Before creating the VMs and LXCs, I decided to prepare some ISOs for the VMs and Templates for the LXCs.
 
-The templates are on Node -> Local (pve) -> Templates. On the top right, click on the Templates button and import the Debian and Alpine. The Debian image will be used by the LXC that contains all the tools to manage the cluster, for example, git, argocd cli, kubectl, ansible, opentofu and others. The Alpine will be used by the LXC with the reverse proxy. I decided to go with Debian for one of them because most tools have plenty of documentation and examples online with a debian OS, so it may be easier to troubleshoot it, but I could go with either Debian or Alpine for both. I choose Alpine for the reverse proxy LXC because it is much more lightweight and since I plan on having just a reverse proxy, should be fine.
+The templates are on Node -> Local (pve01) -> Templates. On the top right, click on the Templates button and import the Debian. The Debian image will be used by both the LXCs. I could use an Alpine image for the reverse proxy LXC as it is more lightweight and I plan on having only the reverse proxy, but decided to have the same OS on all LXCs and VMs for simplicity and don't need to setup anything unrelated to this project, like installing SSH on Alpine.
 
 ![2-install-proxmox-10](./images/2-install-proxmox-10.png)
 
-To prepare the ISOs go to Storage -> Local (pve) -> ISOs. Then click on Download from URL. I decided to download Debian as well since will be where the Kubernetes will be. I could go with Talos Linux, but I decided to go with Debian because I may want to access through ssh to the VM. The Debian download page is this one [Debian download page](https://www.debian.org/distrib/)
+To prepare the ISOs go to Storage -> Local (pve01) -> ISOs. Then click on Download from URL. I decided to download Debian as well since will be where the Kubernetes will be. I could go with Talos Linux, but I decided to go with Debian because I may want to access through ssh to the VM. The Debian download page is this one [Debian download page](https://www.debian.org/distrib/)
 Click on "mirrors" and select the version desired. I decided to go with this one, just copy and paste if necessary "https://mirrors.up.pt/debian-cd/13.6.0/amd64/iso-cd/debian-13.6.0-amd64-netinst.iso".
 
 ![2-install-proxmox-11](./images/2-install-proxmox-11.png)
@@ -309,26 +316,135 @@ If there is the need for a script to do this, here it is:
 #!/bin/bash
 
 # This script downloads ISOs and templates to Proxmox
-# The ISO is a debian and the templates are debian and alpine
+# The ISO is a debian and the templates are debian
 set -e
 
 # Variables
 ISO_URL="https://mirrors.up.pt/debian-cd/13.6.0/amd64/iso-cd/debian-13.6.0-amd64-netinst.iso"
 DEBIAN_TEMPLATE="debian-13-standard_13.6-1_amd64.tar.zst"
-ALPINE_TEMPLATE="alpine-3.24-default_20260714_amd64.tar.xz"
 
-# ---- Download templates
 echo "Downloading Debian template $DEBIAN_TEMPLATE"
 pveam download local $DEBIAN_TEMPLATE
-echo "Downloading Alpine template $ALPINE_TEMPLATE"
-pveam download local $ALPINE_TEMPLATE
 
-# ---- Download ISO
 echo "Downloading ISO from $ISO_URL"
 cd /var/lib/vz/template/iso
 wget $ISO_URL
 
+echo "Updating pveam database"
 pveam update
+```
+
+## 7 - Prepare firewall configurations at datacenter level
+
+The firewall settings will be applied at each LXC or VM level, but it is possible to define a few configurations at the datacenter level on Proxmox. What I did was enable the firewall at the datacenter and node level as well as defining the IPsets and aliases. Then when creating and configuring each LXC and VM, I can just reference those instead of duplicating the information.
+
+Note that enabling the firewall doesn't restrict any access, as there are no rules at datacenter and node levels.
+
+### Enabling Datacenter and Node firewall
+
+To configure the firewall at the datacenter level, select the Datacenter level at the left and navigate to Firewall -> Options and click on the Firewall button to enable it.
+
+![2-install-proxmox-17](./images/2-install-proxmox-17.png)
+
+For the node level, select the node level at the left and navigate to Firewall -> Options and click on the Firewall button to enable it.
+
+![2-install-proxmox-18](./images/2-install-proxmox-18.png)
+
+### Aliases and IPsets
+
+The Aliases are just a way to associate a CIDR or IP to a name and the IPset allows to group a few CIDRs and IPs in a set.
+
+As for the Aliases, I tried to create as many aliases as I though necessary. Here's the list of the ones I defined:
+
+| Alias | CIDR or IP | Description |
+| --- | --- | --- |
+| minipc-physical-network-01 | 192.168.1.70 | CIDRs 70
+| minipc-physical-network-02 | 192.168.1.71 | CIDRs 71
+| home-network-01 | 192.168.1.0/24 | Whole range from 0 to 255
+| lxc-network-01 | 192.168.1.80/28 | CIDRs 80 to 95
+| vm-network-01 | 192.168.1.100/28 | CIDRs 100 to 115
+| lxc-management-01 | 192.168.1.80 | LXC management node 01
+| lxc-nginx-01 | 192.168.1.81 | LXC with nginx 01
+
+![2-install-proxmox-19](./images/2-install-proxmox-19.png)
+
+For the IPsets I tried to create the groups I found relevant:
+
+| IPset | Aliases | Description |
+| --- | --- | --- |
+| minipc-network | minipc-physical-network-01, minipc-physical-network-02 | Everything on the physical miniPC network |
+| home-network | home-network-01 | Everything on home network |
+| lxc-network | lxc-network-01 | All LXCs on the network |
+| vm-network | vm-network-01 | All VMs on the network |
+| management-nodes | lxc-management-01 | Management nodes |
+
+![2-install-proxmox-20](./images/2-install-proxmox-20.png)
+
+### Doing this with a script
+
+Here's the script I used to enable the firewall at datacenter and node level, as well as defining the IPset and aliases:
+
+```bash
+#!/bin/bash
+
+# This script enables firewall at datacenter and node levels.
+# It also defines a few firewall configurations at datacenter level
+# namely aliases and IPsets.
+
+set -e
+
+declare -A ALIASES=(
+    ["minipc-physical-network-01"]="192.168.1.70"
+    ["minipc-physical-network-02"]="192.168.1.71"
+    ["home-network-01"]="192.168.1.0/24"
+    ["lxc-network-01"]="192.168.1.80/28"
+    ["vm-network-01"]="192.168.1.100/28"
+    ["lxc-management-01"]="192.168.1.80"
+    ["lxc-nginx-01"]="192.168.1.81"
+)
+
+declare -A IPSETS=(
+    ["minipc-network"]="dc/minipc-physical-network-01 dc/minipc-physical-network-02"
+    ["home-network"]="dc/home-network-01"
+    ["lxc-network"]="dc/lxc-network-01"
+    ["vm-network"]="dc/vm-network-01"
+    ["management-nodes"]="dc/lxc-management-01"
+)
+
+NODE="pve01"
+
+# Enable firewall on datacenter and node levels
+echo "Start firewall datacenter level"
+pvesh set /cluster/firewall/options --enable 1
+echo "Start firewall node $NODE level"
+pvesh set /nodes/$NODE/firewall/options --enable 1
+
+# Add aliases
+for ALIAS in "${!ALIASES[@]}"; do
+    CIDR="${ALIASES[$ALIAS]}"
+
+    echo "Creating alias: $ALIAS -> $CIDR"
+
+    pvesh create /cluster/firewall/aliases \
+        --name "$ALIAS" \
+        --cidr "$CIDR"
+done
+
+# Add IPsets
+for IPSET in "${!IPSETS[@]}"; do
+
+    echo "Creating IPSet: $IPSET"
+    pvesh create /cluster/firewall/ipset \
+        --name "$IPSET"
+    
+    # Add aliases to IP set
+    for ALIAS in ${IPSETS[$IPSET]}; do
+        echo "-Adding alias: $ALIAS"
+        pvesh create "/cluster/firewall/ipset/$IPSET" \
+            --cidr "$ALIAS"
+
+    done
+done
 ```
 
 # What I didn't do that could have done

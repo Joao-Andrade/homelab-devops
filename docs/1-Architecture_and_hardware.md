@@ -41,13 +41,32 @@ As far as networking, this is the table with the IPs I reserved on the router fo
 | └─ nic1                          | `yy:yy:yy:yy:yy:yy`  | `192.168.1.71`  |
 | **LXC**                          | -                    | -               |
 | └─ management-node               | `02:00:00:00:01:a1`  | `192.168.1.80`  |
-| └─ nginx01                       | `02:00:00:00:01:a2`  | `192.168.1.81`  |
+| └─ reverse-proxy-01              | `02:00:00:00:01:a2`  | `192.168.1.81`  |
 | **VM**                           | -                    | -               |
 | └─ k3s-cp01                      | `02:00:00:00:02:a1`  | `192.168.1.90`  |
 | └─ k3s-wk01                      | `02:00:00:00:02:a2`  | `192.168.1.91`  |
 | └─ k3s-wk02                      | `02:00:00:00:02:a3`  | `192.168.1.92`  |
 
 There are two nic, because the miniPC has two ethernet ports. I placed xx and yy on MAC because it is not relevant for this homelab. The other ones start with 02, because it is a locally managed MAC prefix, which is useful when creating VMs and LXCs, to avoid using a real MAC address. Feel free to use other values or let Proxmox generate one and then adapting the reserved IPs on the router to match the generated MAC.
+
+### Who or what can connect where
+
+One thing I want to do is restrict access to the VMs and LXCs, so not everything can connect to everything. On the [high level architecture](#high-level-architecture) diagram it is possible to see the allowed connections, but heres another way of describing it:
+
+User can:
+- SSH into management-node to manage everything
+- Connect to Proxmox through web UI
+- Connect to reverse proxy with HTTP and HTTPS
+
+Management-node can:
+- SSH into k3s nodes, VMs and LXCs
+- SSH into Proxmox
+
+The reverse proxy:
+- redirects HTTP and HTTPS to Kubernetes
+
+Kubernetes nodes:
+- Can only communicate with other k3s nodes
 
 ## CI/CD
 

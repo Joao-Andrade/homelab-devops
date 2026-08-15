@@ -17,7 +17,7 @@ BRIDGE="vmbr0"
 MAC="02:00:00:00:01:a1"
 IP="192.168.1.80/24"
 GATEWAY="192.168.1.1"
-PATH_TO_SSH_PUBLIC_KEY="<path-to-ssh-public-key>"
+PATH_TO_SSH_PUBLIC_KEY="/root/.ssh/homelab-proxmox.pub"
 
 echo "Creating LXC."
 pct create $VMID $TEMPLATE \

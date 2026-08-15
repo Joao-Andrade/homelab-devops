@@ -4,15 +4,21 @@
 set -e
 
 # Variables
-USERNAME="user_a"
+USERNAME="aaaa"
 GROUPNAME="administrators"
-REALM="pve"
+REALMNAME="pve"
 
 # ---- Remove permissions
+
+echo "Removing permissions for role Administrator and group $GROUPNAME"
 pveum acl delete / --role Administrator --group $GROUPNAME
 
 # ---- Delete User
-pveum user delete $USERNAME@$REALM
+
+echo "Removing user $USERNAME@$REALMNAME"
+pveum user delete $USERNAME@$REALMNAME
 
 # ---- Delete group
+
+echo "Removing group $GROUPNAME"
 pveum group delete $GROUPNAME

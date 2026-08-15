@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram name="Página-1" id="0YkpuIl6u5yKVDXOW1bf">
-    <mxGraphModel dx="855" dy="772" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="855" dy="671" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -28,7 +28,7 @@
         <mxCell id="lvsPWS0dIqqW5Qw8TFhj-11" connectable="0" parent="lvsPWS0dIqqW5Qw8TFhj-4" style="group" value="" vertex="1">
           <mxGeometry height="120" width="117.5" x="39.166666666666664" y="80" as="geometry" />
         </mxCell>
-        <mxCell id="lvsPWS0dIqqW5Qw8TFhj-9" parent="lvsPWS0dIqqW5Qw8TFhj-11" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#0A5041,#0A5041);strokeColor=default;verticalAlign=top;" value="LXC 1&lt;div&gt;Nginx reverse proxy&lt;/div&gt;&lt;div&gt;Alpine 3.24&lt;/div&gt;" vertex="1">
+        <mxCell id="lvsPWS0dIqqW5Qw8TFhj-9" parent="lvsPWS0dIqqW5Qw8TFhj-11" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#0A5041,#0A5041);strokeColor=default;verticalAlign=top;" value="LXC 1&lt;div&gt;Nginx reverse proxy&lt;/div&gt;&lt;div&gt;Debian 13.6&lt;/div&gt;" vertex="1">
           <mxGeometry height="120" width="117.5" as="geometry" />
         </mxCell>
         <mxCell id="lvsPWS0dIqqW5Qw8TFhj-12" edge="1" parent="lvsPWS0dIqqW5Qw8TFhj-11" source="lvsPWS0dIqqW5Qw8TFhj-9" style="endArrow=none;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="lvsPWS0dIqqW5Qw8TFhj-9" value="">

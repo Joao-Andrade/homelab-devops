@@ -1,0 +1,21 @@
+---
+- name: Configure common Debian settings
+  hosts: reverse_proxys
+  become: true
+  roles:
+    - debian_common
+
+- name: Install and configure Nginx reverse proxy
+  hosts: reverse_proxys
+  become: true
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: Ensure nginx is enabled and running
+      ansible.builtin.systemd:
+        name: nginx
+        enabled: true
+        state: started
