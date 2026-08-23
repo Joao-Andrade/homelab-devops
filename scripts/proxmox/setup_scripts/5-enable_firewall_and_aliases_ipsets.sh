@@ -13,7 +13,7 @@ declare -A ALIASES=(
     ["lxc-network-01"]="192.168.1.80/28"
     ["vm-network-01"]="192.168.1.100/28"
     ["lxc-management-01"]="192.168.1.80"
-    ["lxc-nginx-01"]="192.168.1.81"
+    ["lxc-reverse-proxy-01"]="192.168.1.81"
 )
 
 declare -A IPSETS=(
@@ -22,6 +22,7 @@ declare -A IPSETS=(
     ["lxc-network"]="dc/lxc-network-01"
     ["vm-network"]="dc/vm-network-01"
     ["management-nodes"]="dc/lxc-management-01"
+    ["reverse-proxy"]="dc/lxc-reverse-proxy-01"
 )
 
 NODE="pve01"

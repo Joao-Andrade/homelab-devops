@@ -152,4 +152,20 @@ resource "proxmox_virtual_environment_firewall_rules" "k3s-nodes-inbound" {
     macro   = "SSH"
     log     = "nolog"
   }
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Allow HTTP from reverse proxy nodes"
+    source  = "+dc/reverse-proxy-nodes"
+    macro   = "HTTP"
+    log     = "nolog"
+  }
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Allow HTTPS from reverse proxy nodes"
+    source  = "+dc/reverse-proxy-nodes"
+    macro   = "HTTPS"
+    log     = "nolog"
+  }
 }
