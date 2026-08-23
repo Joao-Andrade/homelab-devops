@@ -218,6 +218,8 @@ The list of previledges is:
 - VM.Migrate
 - VM.Console
 - VM.PowerMgmt
+- VM.GuestAgent.Audit
+- VM.GuestAgent.Unrestricted
 
 ![2-install-proxmox-12](./images/2-install-proxmox-12.png)
 
@@ -276,7 +278,9 @@ VM.Config.Network \
 VM.Config.Options \
 VM.Console \
 VM.Migrate \
-VM.PowerMgmt"
+VM.PowerMgmt \
+VM.GuestAgent.Audit \
+VM.GuestAgent.Unrestricted"
 
 echo "Creating role $ROLENAME"
 pveum role add $ROLENAME --privs "$PREVILEDGES"
@@ -297,16 +301,15 @@ echo "Setting role permissions $ROLENAME for api token $APITOKENNAME"
 pveum acl modify / --role $ROLENAME --token $USERNAME@$REALMNAME!$APITOKENNAME
 ```
 
-## 6 - prepare some ISOs and Templates
+## 6 - prepare some Images and Templates
 
-Before creating the VMs and LXCs, I decided to prepare some ISOs for the VMs and Templates for the LXCs.
+Before creating the VMs and LXCs, I decided to prepare an image for the VMs and a template for the LXCs.
 
 The templates are on Node -> Local (pve01) -> Templates. On the top right, click on the Templates button and import the Debian. The Debian image will be used by both the LXCs. I could use an Alpine image for the reverse proxy LXC as it is more lightweight and I plan on having only the reverse proxy, but decided to have the same OS on all LXCs and VMs for simplicity and don't need to setup anything unrelated to this project, like installing SSH on Alpine.
 
 ![2-install-proxmox-10](./images/2-install-proxmox-10.png)
 
-To prepare the ISOs go to Storage -> Local (pve01) -> ISOs. Then click on Download from URL. I decided to download Debian as well since will be where the Kubernetes will be. I could go with Talos Linux, but I decided to go with Debian because I may want to access through ssh to the VM. The Debian download page is this one [Debian download page](https://www.debian.org/distrib/)
-Click on "mirrors" and select the version desired. I decided to go with this one, just copy and paste if necessary "https://mirrors.up.pt/debian-cd/13.6.0/amd64/iso-cd/debian-13.6.0-amd64-netinst.iso".
+To prepare the Images for the VMs I could download an ISO, but because I don't want to create the VM and then manually installing the OS, I need to import a cloud-ready image. Fortunately, Debian has [official cloud images](https://cloud.debian.org/images/cloud/) ready to use. On Storage -> Local (pve01) -> Import, clicked on Download from URL. I downloaded the Trixie version, which is the latest when I wrote this, namely [this one](https://cloud.debian.org/images/cloud/trixie/20260601-2496/). There are a lot of download options on that page, but the important one is the `debian-13-generic-amd64-20260601-2496.qcow2`, because the "generic" is the one compatible with cloud-init. I could go with Talos Linux, but I decided to go with Debian because I may want to access through ssh to the VM.
 
 ![2-install-proxmox-11](./images/2-install-proxmox-11.png)
 
@@ -315,20 +318,20 @@ If there is the need for a script to do this, here it is:
 ```bash
 #!/bin/bash
 
-# This script downloads ISOs and templates to Proxmox
-# The ISO is a debian and the templates are debian
+# This script downloads Images and templates to Proxmox
+# The image is a debian and the templates is also debian
 set -e
 
 # Variables
-ISO_URL="https://mirrors.up.pt/debian-cd/13.6.0/amd64/iso-cd/debian-13.6.0-amd64-netinst.iso"
+IMAGE_URL="https://cloud.debian.org/images/cloud/trixie/20260601-2496/debian-13-generic-amd64-20260601-2496.qcow2"
 DEBIAN_TEMPLATE="debian-13-standard_13.6-1_amd64.tar.zst"
 
 echo "Downloading Debian template $DEBIAN_TEMPLATE"
 pveam download local $DEBIAN_TEMPLATE
 
-echo "Downloading ISO from $ISO_URL"
-cd /var/lib/vz/template/iso
-wget $ISO_URL
+echo "Downloading image from $IMAGE_URL"
+cd /var/lib/vz/import
+wget $IMAGE_URL
 
 echo "Updating pveam database"
 pveam update

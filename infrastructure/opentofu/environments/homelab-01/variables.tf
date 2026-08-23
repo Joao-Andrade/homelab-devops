@@ -20,3 +20,8 @@ variable "ssh_public_key" {
   description = "SSH public key to add to the root account of the LXCs and VMs"
   type        = string
 }
+
+variable "proxmox_ssh_private_key_path" {
+  description = "Path to SSH key to add snippets to Proxmox"
+  type        = string
+}

@@ -34,7 +34,9 @@ VM.Config.Network \
 VM.Config.Options \
 VM.Console \
 VM.Migrate \
-VM.PowerMgmt"
+VM.PowerMgmt \
+VM.GuestAgent.Audit \
+VM.GuestAgent.Unrestricted"
 
 echo "Creating role $ROLENAME"
 pveum role add $ROLENAME --privs "$PREVILEDGES"

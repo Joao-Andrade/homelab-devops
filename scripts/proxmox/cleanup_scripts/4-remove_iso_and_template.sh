@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# This script deletes the ISOs and templates on Proxmox
-# The ISO is a debian and the templates are debian and alpine
+# This script deletes the images and templates on Proxmox
+# The image is a debian and the templates is debian
 set -e
 
 # Variables
-ISO="debian-13.6.0-amd64-netinst.iso"
+IMAGE="debian-13-generic-amd64-20260601-2496.qcow2"
 DEBIAN_TEMPLATE="vztmpl/debian-13-standard_13.6-1_amd64.tar.zst"
 
 # ---- Remove templates
@@ -13,8 +13,8 @@ echo "Removing Debian template $DEBIAN_TEMPLATE"
 pveam remove local:$DEBIAN_TEMPLATE
 
 # ---- Remove ISO
-echo "Removing ISO $ISO_URL"
-cd /var/lib/vz/template/iso
-rm $ISO
+echo "Removing Image $IMAGE"
+cd /var/lib/vz/import
+rm $IMAGE
 
 pveam update

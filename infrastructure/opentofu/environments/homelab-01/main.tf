@@ -2,6 +2,12 @@
 # The management-node LXC is not managed here
 # because it cannot be used to create itself.
 
+#################
+#
+# LXC containers
+#
+#################
+
 # ---- REVERSE PROXY 01 LXC ----
 
 # Reverse proxy 01 LXC
@@ -69,6 +75,81 @@ resource "proxmox_virtual_environment_firewall_rules" "lxc-reverse-proxy-01-inbo
     comment = "Allow HTTPS from home network"
     source  = "+dc/home-network"
     macro   = "HTTPS"
+    log     = "nolog"
+  }
+}
+
+#################
+#
+# VMs
+#
+#################
+
+# Cloud-init snippet for VMs
+resource "proxmox_virtual_environment_file" "vm_cloud_config" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = var.proxmox_node
+
+  source_raw {
+    data = templatefile("${path.module}/../../cloud_configs/debian_setup_qemu_and_ssh.cfg", {
+      ssh_public_key = var.ssh_public_key
+    })
+    file_name = "debian-cloud-config.yaml"
+  }
+}
+
+# ---- VMs for Kubernetes nodes ----
+
+module "k3s-nodes" {
+  source   = "../../modules/vm"
+  for_each = local.k3s_nodes
+
+  depends_on = [
+    proxmox_virtual_environment_file.vm_cloud_config
+  ]
+
+  node_name         = var.proxmox_node
+  vm_id             = each.value.vm_id
+  vm_name           = each.key
+  cores             = each.value.cores
+  memory            = each.value.memory
+  disk_size         = each.value.disk_size
+  mac_address       = each.value.mac_address
+  ip_address        = each.value.ip_address
+  gateway           = "192.168.1.1"
+  user_data_file_id = proxmox_virtual_environment_file.vm_cloud_config.id
+  firewall          = true
+}
+
+# VMs enable firewall
+resource "proxmox_virtual_environment_firewall_options" "k3s-nodes-firewall-options" {
+  for_each   = local.k3s_nodes
+  depends_on = [module.k3s-nodes]
+
+  node_name = var.proxmox_node
+  vm_id     = each.value.vm_id
+
+  enabled = true
+}
+
+# VMs allow ssh from management nodes
+resource "proxmox_virtual_environment_firewall_rules" "k3s-nodes-inbound" {
+  for_each = local.k3s_nodes
+  depends_on = [
+    module.k3s-nodes,
+    proxmox_virtual_environment_firewall_options.k3s-nodes-firewall-options
+  ]
+
+  node_name = var.proxmox_node
+  vm_id     = each.value.vm_id
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Allow SSH from management nodes"
+    source  = "+dc/management-nodes"
+    macro   = "SSH"
     log     = "nolog"
   }
 }
