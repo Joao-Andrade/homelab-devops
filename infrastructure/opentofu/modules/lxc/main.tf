@@ -2,7 +2,7 @@
 
 resource "proxmox_virtual_environment_container" "lxc-container" {
   node_name   = var.node_name
-  vm_id       = var.vm_id
+  vm_id       = var.lxc_id
   description = var.description
   pool_id     = var.pool_id
   tags        = var.tags

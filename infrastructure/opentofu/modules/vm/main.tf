@@ -34,8 +34,8 @@ resource "proxmox_virtual_environment_vm" "vm" {
   initialization {
     ip_config {
       ipv4 {
-        address = var.ip_address
-        gateway = var.gateway
+        address = var.ipv4_address
+        gateway = var.ipv4_gateway
       }
     }
     user_data_file_id = var.user_data_file_id

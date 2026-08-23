@@ -15,7 +15,7 @@ module "lxc-reverse-proxy-01" {
   source = "../../modules/lxc"
 
   node_name        = var.proxmox_node
-  vm_id            = 101
+  lxc_id           = 101
   hostname         = "homelab-lxc-reverse-proxy-01"
   description      = "Reverse proxy LXC"
   template_file_id = "local:vztmpl/debian-13-standard_13.6-1_amd64.tar.zst"
@@ -116,8 +116,8 @@ module "k3s-nodes" {
   memory            = each.value.memory
   disk_size         = each.value.disk_size
   mac_address       = each.value.mac_address
-  ip_address        = each.value.ip_address
-  gateway           = "192.168.1.1"
+  ipv4_address      = each.value.ipv4_address
+  ipv4_gateway      = "192.168.1.1"
   user_data_file_id = proxmox_virtual_environment_file.vm_cloud_config.id
   firewall          = true
 }

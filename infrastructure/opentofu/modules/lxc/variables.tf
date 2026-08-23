@@ -5,8 +5,8 @@ variable "node_name" {
   type        = string
 }
 
-variable "vm_id" {
-  description = "Container ID (VMID)"
+variable "lxc_id" {
+  description = "LXC ID"
   type        = number
 }
 
@@ -57,7 +57,7 @@ variable "nesting" {
 }
 
 variable "cores" {
-  description = "Number of CPU cores"
+  description = "Number of vCPU cores"
   type        = number
   default     = 1
 }

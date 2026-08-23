@@ -1,5 +1,5 @@
 variable "node_name" {
-  description = "Proxmox node where the container will be created"
+  description = "Proxmox node where the VM will be created"
   type        = string
 }
 
@@ -27,7 +27,7 @@ variable "sockets" {
 
 variable "memory" {
   type        = number
-  description = "RAM Memory in MB"
+  description = "RAM memory in MB"
 }
 
 variable "disk_size" {
@@ -37,18 +37,20 @@ variable "disk_size" {
 
 variable "mac_address" {
   type        = string
-  description = "MAC address for the network interface"
+  description = "MAC address for the network interface. Leave null to let Proxmox generate one"
+  default     = null
 }
 
-variable "ip_address" {
+variable "ipv4_address" {
   type        = string
-  description = "Static IP in CIDR format (ex: 192.168.1.50/24)"
+  description = "IPv4 address or 'dhcp'"
+  default     = "dhcp"
 }
 
-variable "gateway" {
+variable "ipv4_gateway" {
   type        = string
-  description = "Gateway IP address"
-  default     = "192.168.1.1"
+  description = "IPv4 gateway or null if address is 'dhcp'"
+  default     = "dhcp"
 }
 
 variable "firewall" {
