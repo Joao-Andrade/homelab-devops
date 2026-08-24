@@ -1,0 +1,78 @@
+---
+- name: Configure control plane node
+  hosts: k3s_control_plane
+  become: true
+  roles:
+    - debian_common
+
+- name: Install k3s
+  hosts: k3s_control_plane
+  become: true
+  tasks:
+
+    - name: Install k3s server
+      ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -
+      args:
+        # Don't install if already exists
+        creates: /usr/local/bin/k3s
+
+    - name: Check k3s service
+      ansible.builtin.systemd:
+        name: k3s
+        state: started
+        enabled: true
+
+    - name: Check kubectl
+      ansible.builtin.command:
+        cmd: k3s kubectl version --client
+      changed_when: false
+
+    - name: Check Kubernetes API
+      ansible.builtin.command:
+        cmd: k3s kubectl get --raw=/readyz
+      changed_when: false
+      retries: 12
+      delay: 5
+      register: k3s_ready
+      until: k3s_ready.rc == 0 and 'ok' in k3s_ready.stdout
+
+    - name: Copy kubeconfig from control plane to local /tmp
+      ansible.builtin.fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "/tmp/k3s.yaml"
+        flat: true
+
+- name: Create Kubeconfig for local access
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Create .kube directory
+      ansible.builtin.file:
+        path: "{{ lookup('env', 'HOME') }}/.kube"
+        state: directory
+        mode: "0700"
+
+    - name: Change API server address
+      ansible.builtin.replace:
+        path: "/tmp/k3s.yaml"
+        regexp: 'https://127\.0\.0\.1:6443'
+        replace: "https://{{ hostvars[groups['k3s_control_plane'][0]].ansible_host }}:6443"
+
+    - name: Install kubeconfig
+      ansible.builtin.copy:
+        src: "/tmp/k3s.yaml"
+        dest: "{{ lookup('env', 'HOME') }}/.kube/homelab_cluster01"
+        mode: "0600"
+
+    - name: Clean up temporary kubeconfig copy
+      ansible.builtin.file:
+        path: "/tmp/k3s.yaml"
+        state: absent
+
+    - name: Add kc01 alias for kubectl
+      ansible.builtin.lineinfile:
+        path: "{{ lookup('env', 'HOME') }}/.bashrc"
+        regexp: "^alias kc01="
+        line: "alias kc01='kubectl --kubeconfig {{ lookup('env', 'HOME') }}/.kube/homelab_cluster01'"
+        create: true
+        mode: "0644"

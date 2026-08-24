@@ -2,7 +2,7 @@
 
 Now that I have Proxmox ready, I can create the VMs and LXCs as planned in the first article. The overall plan is to create 3 VMs for Kubernetes with K3s and 2 LXCs, one with a reverse proxy and the other with all the tools needed to manage everything, for example kubectl, ansible and opentofu.
 
-Check out [architecture](./1-Architecture_and_hardware.md) for more details about the design and a high level overview of the architecture.
+Check out [first article about the architecture](./1-Architecture_and_hardware.md) for more details about the design and a high level overview of the architecture.
 
 # Creating the first LXC
 
@@ -305,3 +305,4 @@ Heres the full list of articles of this series:
  - [2 - Install Proxmox](./2-Install_proxmox.md)
  - [3 - Create and configure LXCs](./3-Create_and_conf_LXCs.md)
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
+ - [5 - Deploy and compare git servers](./5-Deploy_and_compare_git_servers.md)

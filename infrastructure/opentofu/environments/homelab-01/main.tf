@@ -99,7 +99,7 @@ resource "proxmox_virtual_environment_file" "vm_cloud_config" {
   }
 }
 
-# ---- VMs for Kubernetes nodes ----
+# ---- VMS FOR KUBERNETES CLUSTER ----
 
 module "k3s-nodes" {
   source   = "../../modules/vm"
@@ -109,9 +109,10 @@ module "k3s-nodes" {
     proxmox_virtual_environment_file.vm_cloud_config
   ]
 
+  hostname          = each.key
+  vm_name           = each.key
   node_name         = var.proxmox_node
   vm_id             = each.value.vm_id
-  vm_name           = each.key
   cores             = each.value.cores
   memory            = each.value.memory
   disk_size         = each.value.disk_size
@@ -155,6 +156,15 @@ resource "proxmox_virtual_environment_firewall_rules" "k3s-nodes-inbound" {
   rule {
     type    = "in"
     action  = "ACCEPT"
+    comment = "Allow kubectl access from management nodes"
+    source  = "+dc/management-nodes"
+    dport   = "6443"
+    proto   = "tcp"
+    log     = "nolog"
+  }
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
     comment = "Allow HTTP from reverse proxy nodes"
     source  = "+dc/reverse-proxy-nodes"
     macro   = "HTTP"
@@ -166,6 +176,33 @@ resource "proxmox_virtual_environment_firewall_rules" "k3s-nodes-inbound" {
     comment = "Allow HTTPS from reverse proxy nodes"
     source  = "+dc/reverse-proxy-nodes"
     macro   = "HTTPS"
+    log     = "nolog"
+  }
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Allow k3s API server between k3s nodes"
+    source  = "+dc/vm-network"
+    dport   = "6443"
+    proto   = "tcp"
+    log     = "nolog"
+  }
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Allow flannel VXLAN overlay between k3s nodes"
+    source  = "+dc/vm-network"
+    dport   = "8472"
+    proto   = "udp"
+    log     = "nolog"
+  }
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Allow kubelet API between k3s nodes"
+    source  = "+dc/vm-network"
+    dport   = "10250"
+    proto   = "tcp"
     log     = "nolog"
   }
 }
