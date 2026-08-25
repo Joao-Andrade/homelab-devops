@@ -147,7 +147,7 @@ I used Proxmox. The main reasons are it is free and open-source, it is widely re
 
 # Next steps
 
-Now that it is possible to understand what I want to do and a high level view of the architecture of the homelab, we can start actually building it. On the next chapter, [Install Proxmox](./2-Install_proxmox.md), we will install Proxmox on the Mini PC and set up the network configuration.
+Now that it is possible to understand what I want to do and a high level view of the architecture of the homelab, we can start actually building it. On the next chapter, [2 - Install Proxmox](./2-Install_proxmox.md), we will install Proxmox on the Mini PC and set up the network configuration.
 
 # Articles:
 

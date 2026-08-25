@@ -295,7 +295,7 @@ From my PC, I can now open the browser and check `http://192.168.1.81` to see th
 
 # Next steps
 
-Now that I have a management LXC and already tried creating and configuring resources with Opentofu and Ansible, I can use them to create and configure the VMs that will be my kubernetes cluster. That is what I do in the next article [Creating and configuring VMs](./4-Create_and_conf_VMs.md).
+Now that I have a management LXC and already tried creating and configuring resources with Opentofu and Ansible, I can use them to create and configure the VMs that will be my kubernetes cluster. That is what I do in the next article [4 - Create and configure VMs](./4-Create_and_conf_VMs.md).
 
 # Articles:
 
