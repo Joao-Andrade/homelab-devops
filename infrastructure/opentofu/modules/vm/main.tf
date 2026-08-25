@@ -29,6 +29,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
   memory {
     dedicated = var.memory
+    floating  = coalesce(var.memory_floating, floor(var.memory / 2))
   }
 
   disk {

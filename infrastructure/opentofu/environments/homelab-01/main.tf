@@ -115,6 +115,7 @@ module "k3s-nodes" {
   vm_id             = each.value.vm_id
   cores             = each.value.cores
   memory            = each.value.memory
+  memory_floating   = each.value.memory
   disk_size         = each.value.disk_size
   mac_address       = each.value.mac_address
   ipv4_address      = each.value.ipv4_address
