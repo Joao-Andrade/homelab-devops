@@ -5,6 +5,7 @@ Helm charts to deploy applications on the kubernetes cluster.
 ## Charts
 
 - [`simple-app`](./simple-app) — minimal nginx chart, used as a first test on the kubernetes cluster.
+- [`gitlab`](./gitlab) — wrapper chart around the official GitLab Helm chart, with optional components disabled by default.
 
 ## Useful commands
 

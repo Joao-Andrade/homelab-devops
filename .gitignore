@@ -43,6 +43,10 @@ terraform.rc
 # Uncomment the line below if you want to ignore planout files.
 # planout
 
+# Downloaded Helm chart dependencies (recreate with `helm dependency update`)
+infrastructure/helm-charts/*/charts/
+infrastructure/helm-charts/*/Chart.lock
+
 dont_upload
 
 .DS_Store

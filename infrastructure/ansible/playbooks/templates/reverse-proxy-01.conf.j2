@@ -1,0 +1,68 @@
+worker_processes auto;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    server {
+        listen 80;
+        server_name _;
+
+        location / {
+            proxy_pass http://192.168.1.90:8080;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+
+    # k3s nodes all run Traefik's ServiceLB on port 80 (bundled with k3s),
+    # so any node's IP works as an entrypoint - listing all three here gives
+    # basic round-robin/failover instead of depending on a single node.
+    upstream k3s_nodes {
+        server 192.168.1.100:80;
+        server 192.168.1.101:80;
+        server 192.168.1.102:80;
+    }
+
+    server {
+        listen 80;
+        server_name hello-world.homelab.lan;
+
+        location / {
+            proxy_pass http://k3s_nodes;
+
+            # Host header must be preserved as-is (not $proxy_host) so Traefik
+            # can match the Ingress rule by hostname.
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+
+    server {
+        listen 80;
+        server_name gitlab.internal;
+
+        location / {
+            proxy_pass http://k3s_nodes;
+
+            # Host header must be preserved as-is (not $proxy_host) so Traefik
+            # can match the Ingress rule by hostname.
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # GitLab's web UI sends large headers/cookies and can take a while
+            # to respond on first load - bump the defaults a bit.
+            proxy_buffer_size 16k;
+            proxy_buffers 4 16k;
+            client_max_body_size 100m;
+        }
+    }
+}
