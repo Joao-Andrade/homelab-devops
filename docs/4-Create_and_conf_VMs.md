@@ -86,11 +86,11 @@ One thing I want to do before continuing with the next steps is to deploy a simp
 
 For that I used helm charts. On my repository [Joao-Andrade/homelab-devops](https://github.com/Joao-Andrade/homelab-devops/tree/v4/infrastructure/helm-charts) I created a folder called `helm-charts`. For now that only contains the `simple-app` chart. That deploys a simple nginx pod and exposes it on port 80.
 
-To deploy the pod, on the management node, cloned the repository and inside the `infrastructure/helm-charts` folder, executed the following commands:
+To deploy the pod, on the management node, cloned the repository and inside the `infrastructure/helm-charts/simple-app` folder, executed the following commands:
 
 ```bash
 # Do this if not already on the folder
-# cd infrastructure/helm-charts
+# cd infrastructure/helm-charts/simple-app
 helm lint .
 
 # Show the resulting kubernetes manifests after applying the templates and values
