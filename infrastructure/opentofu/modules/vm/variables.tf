@@ -61,6 +61,18 @@ variable "memory" {
   type        = number
 }
 
+variable "memory_floating" {
+  description = <<-EOT
+    Minimum RAM in MB for memory ballooning. Proxmox can shrink
+    the VM's actual memory down to this value when idle and grow it as needed. 
+    Leave null to default to half of `memory`. Set equal to `memory` to only
+    attach the balloon device (for accurate usage reporting) without any real
+    dynamic range. Set to 0 to disable ballooning entirely (fixed allocation).
+  EOT
+  type        = number
+  default     = null
+}
+
 variable "disk_datastore_id" {
   description = "Proxmox storage ID"
   type        = string
