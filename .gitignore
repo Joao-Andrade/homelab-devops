@@ -44,8 +44,10 @@ terraform.rc
 # planout
 
 # Downloaded Helm chart dependencies (recreate with `helm dependency update`)
-infrastructure/helm-charts/*/charts/
-infrastructure/helm-charts/*/Chart.lock
+# Charts are nested under subfolders (e.g. helm-charts/source-control/gitlab),
+# so this needs to match at any depth, not just one level below helm-charts/.
+infrastructure/helm-charts/**/charts/
+infrastructure/helm-charts/**/Chart.lock
 
 dont_upload
 

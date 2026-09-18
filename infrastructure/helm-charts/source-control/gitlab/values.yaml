@@ -1,0 +1,123 @@
+# Values for the gitlab chart.
+
+gitlab:
+  # ---------------------------------------------------------------------------
+  # Required basics
+  # ---------------------------------------------------------------------------
+  global:
+    hosts:
+      domain: gitlab.internal # Base domain
+      https: false # No TLS/cert-manager for now 
+      gitlab:
+        name: gitlab.internal # Explicit web UI hostname
+
+    ingress:
+      enabled: true
+      class: "traefik"
+      configureCertmanager: false
+
+    # GitLab Agent Server for Kubernetes
+    kas:
+      enabled: false
+
+    # GitLab Pages (static site hosting)
+    pages:
+      enabled: false
+
+    appConfig:
+      # Reply-by-email
+      incomingEmail:
+        enabled: false
+
+    # Mandatory object storage - using MinIO instead of external storage
+    minio:
+      enabled: true
+  
+  gitlab:
+    webservice:
+      minReplicas: 1
+      maxReplicas: 1
+      workerProcesses: 1 # 2 if webservice becomes a bottleneck.
+      metrics:
+        enabled: false # Prometheus metrics endpoint
+      resources:
+        requests:
+          memory: 1.25G
+        limits:
+          memory: 2.5G
+      extraEnv:
+        MALLOC_CONF: "dirty_decay_ms:1000,muzzy_decay_ms:1000"
+
+    sidekiq:
+      minReplicas: 1
+      maxReplicas: 1
+      concurrency: 10
+      metrics:
+        enabled: false
+
+    gitaly:
+      extraEnv:
+        MALLOC_CONF: "dirty_decay_ms:1000,muzzy_decay_ms:1000"
+        GITALY_COMMAND_SPAWN_MAX_PARALLEL: "2"
+
+    gitlab-shell:
+      minReplicas: 1
+      maxReplicas: 1
+
+    # For backups
+    toolbox:
+      enabled: true
+
+    # Email handling
+    mailroom:
+      enabled: false
+
+    # Useful for prometheus monitoring
+    gitlab-exporter:
+      enabled: false
+
+    # Anti-spam service
+    spamcheck:
+      enabled: false
+
+
+  # ---------------------------------------------------------------------------
+  # Optional add-ons
+  # ---------------------------------------------------------------------------
+
+   # No TLS certs to issue while ingress is disabled.
+  installCertmanager: false
+
+  # No bundled Ingress controller
+  # Using the reverse-proxy LXC instead
+  nginx-ingress:
+    enabled: false
+
+  # No in-cluster CI runner yet
+  gitlab-runner:
+    install: false
+    
+  # Monitoring stack
+  prometheus:
+    install: false
+
+  # Container registry
+  registry:
+    enabled: false
+
+  # ---------------------------------------------------------------------------
+  # Mandatory data services.
+  # GitLab cannot run without a database, a cache and object storage - these
+  # can't simply be "disabled", only if there are external services
+  # providing them.
+  # ---------------------------------------------------------------------------
+
+  # If installed separately on the cluster
+  # set to false and configure `gitlab.global.psql.host`
+  postgresql:
+    install: true
+
+  # If installed separately on the cluster
+  # set to false and configure `gitlab.global.redis.host`
+  redis:
+    install: true

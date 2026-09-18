@@ -4,8 +4,12 @@ Helm charts to deploy applications on the kubernetes cluster.
 
 ## Charts
 
+Charts are separated by functionality. For example all git server related components are in the `source-control` folder.
+
 - [`simple-app`](./simple-app) — minimal nginx chart, used as a first test on the kubernetes cluster.
-- [`gitlab`](./gitlab) — wrapper chart around the official GitLab Helm chart, with optional components disabled by default.
+- [`source-control`](./source-control) — git server components:
+    - [`gitlab`](./source-control/gitlab) — wrapper chart around the official GitLab Helm chart, with optional components disabled by default.
+    - [`gitea`](./source-control/gitea) — Chart to deploy Gitea.
 
 ## Useful commands
 

@@ -1,0 +1,64 @@
+# Values for the gitea chart.
+
+gitea:
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+  ingress:
+    enabled: true
+    className: "traefik"
+    hosts:
+      - host: gitea.internal
+        paths:
+          - path: /
+
+  gitea:
+    admin:
+      username: "gitea"
+      # Could use a secret
+      password: "gitea"
+      email: "gitea@gitea.internal"
+
+    config:
+      database:
+        DB_TYPE: sqlite3
+      session:
+        PROVIDER: memory
+      cache:
+        ADAPTER: memory
+      queue:
+        TYPE: level
+      server:
+        DOMAIN: gitea.internal
+        ROOT_URL: "http://gitea.internal/"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # ---------------------------------------------------------------------------
+  # Optional
+  # ---------------------------------------------------------------------------
+  
+  # Postgres DB
+  # Not needed as it will use SQLite
+  postgresql:
+    enabled: false
+
+  # Postgres DB but for HA
+  postgresql-ha:
+    enabled: false
+
+  # For cache
+  valkey:
+    enabled: false
+
+  # For cache but deploys as multiple replicas
+  valkey-cluster:
+    enabled: false

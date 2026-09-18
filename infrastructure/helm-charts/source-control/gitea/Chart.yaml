@@ -1,0 +1,13 @@
+apiVersion: v2
+name: gitea
+description: >-
+  I used the official helm chart for gitea as a base, and custumized the values
+  file. I tried to disable some optional features so it consumes less resources.
+  For example, no HA DB and use only SQLite.
+type: application
+version: 0.1.0
+appVersion: "1.27.0" # Actual gitea version
+dependencies:
+  - name: gitea
+    version: "12.7.0" # Official helm version
+    repository: "https://dl.gitea.com/charts/"

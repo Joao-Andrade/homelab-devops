@@ -1,0 +1,12 @@
+apiVersion: v2
+name: gitlab
+description: >-
+  I used the official helm chart for gitlab as a base, and custumized the values
+  file. I tried to disable some optional features so it consumes less resources.
+type: application
+version: 0.1.0
+appVersion: "18.11" # Actual gitlab version
+dependencies:
+  - name: gitlab
+    version: "9.11.12" # Official helm version
+    repository: "https://charts.gitlab.io/"

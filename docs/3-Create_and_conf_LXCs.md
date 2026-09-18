@@ -241,9 +241,13 @@ Terraform is a tool used to manage the infrastructure using code, or more known 
 |   |   |   |-- Playbook to run the tasks on the reverse proxy
 |   |-- roles
 |   |   |-- Reusable code, similar to opentofu's modules.
+|-- helm-charts (later chapters)
+|   |-- app1
+|   |-- app2
+|   |-- ....
 ```
 
-The infrastucture folder contains both the Opentofu code to create the LXC and the ansible folder with the code to configure the LXC.
+The infrastucture folder contains both the Opentofu code to create the LXC and the ansible folder with the code to configure the LXC. It will also contain the helm-charts folder which will have the helm charts for the applications I install, like argocd or gitlab.
 
 Inside the opentofu folder, there are three folders: states, modules and environments.
  - The states folder contains the state of the infrastucture. When using opentofu, for example `tofu apply`, it creates a state file to keep track of the resources that were created and what changes are on the code compared to the state file.
@@ -255,6 +259,8 @@ Inside the ansibles folder, there are three folders and a file:
  - The inventory folder contains the hosts where ansible will connect to.
  - The playbooks folder contains the playbooks. A playbook is a list of tasks to execute on one or more hosts.
  - The roles folder contains reusable code, similar to opentofu's modules. For example, I just created one to update the apt cache and upgrade the packages on debian hosts.
+
+Inside the helm-charts folder, it contains the helm charts for the applications I install, like argocd or gitlab, but that is described on the next chapters.
 
 ## Using opentofu to create the LXC
 
