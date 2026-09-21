@@ -43,9 +43,9 @@ As far as networking, this is the table with the IPs I reserved on the router fo
 | └─ management-node               | `02:00:00:00:01:a1`  | `192.168.1.80`  |
 | └─ reverse-proxy-01              | `02:00:00:00:01:a2`  | `192.168.1.81`  |
 | **VM**                           | -                    | -               |
-| └─ k3s-cp01                      | `02:00:00:00:02:a1`  | `192.168.1.90`  |
-| └─ k3s-wk01                      | `02:00:00:00:02:a2`  | `192.168.1.91`  |
-| └─ k3s-wk02                      | `02:00:00:00:02:a3`  | `192.168.1.92`  |
+| └─ k3s-cp01                      | `02:00:00:00:02:a1`  | `192.168.1.100`  |
+| └─ k3s-wk01                      | `02:00:00:00:02:a2`  | `192.168.1.101`  |
+| └─ k3s-wk02                      | `02:00:00:00:02:a3`  | `192.168.1.102`  |
 
 There are two nic, because the miniPC has two ethernet ports. I placed xx and yy on MAC because it is not relevant for this homelab. The other ones start with 02, because it is a locally managed MAC prefix, which is useful when creating VMs and LXCs, to avoid using a real MAC address. Feel free to use other values or let Proxmox generate one and then adapting the reserved IPs on the router to match the generated MAC.
 
@@ -157,4 +157,5 @@ Heres the full list of articles of this series:
  - [2 - Install Proxmox](./2-Install_proxmox.md)
  - [3 - Create and configure LXCs](./3-Create_and_conf_LXCs.md)
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
- - [5 - Deploy and compare git servers](./5-Deploy_and_compare_git_servers.md)
+ - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
+ - [6 - Deploy ArgoCD](./6-deploy_argocd.md)

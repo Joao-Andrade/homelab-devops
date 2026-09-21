@@ -478,4 +478,5 @@ Heres the full list of articles of this series:
  - [2 - Install Proxmox](./2-Install_proxmox.md)
  - [3 - Create and configure LXCs](./3-Create_and_conf_LXCs.md)
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
- - [5 - Deploy and compare git servers](./5-Deploy_and_compare_git_servers.md)
+ - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
+ - [6 - Deploy ArgoCD](./6-deploy_argocd.md)

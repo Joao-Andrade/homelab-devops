@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# https://docs.gitea.com/api/operations/create-current-user-repo/
-
-# password
-# get secret --kubeconfig ~/.kube/homelab_cluster01 -n gitlab gitlab-gitlab-initial-root-password -o jsonpath="{.data.password}" | base64 --decode; echo
-# https://docs.gitlab.com/topics/git/project/
-
-
 # Accepts a true or false argument to generate files on TMP_FOLDER first
 GENERATE_BIG_FILES=${1:-false}
 BIG_FILE_SIZES=(10 50)
@@ -17,14 +10,14 @@ TMP_FOLDER="/tmp"
 TMP_SCRIPT_FOLDER="git_server_tests"
 
 # example repo files
-EXAMPLE_REPO_FILES_PATH="/Users/joaoandrade/dev/personal_stuff/homelab-devops/scripts/management-node/testing-apps/source-control/testing-git-files"
+EXAMPLE_REPO_FILES_PATH="<script_folder_path>/scripts/management-node/testing-apps/source-control/testing-git-files"
 
 GIT_SERVER="gitea"
 # GIT_SERVER="gitlab"
 GIT_SERVER_PROTOCOL="http"
 GIT_SERVER_HOST="$GIT_SERVER.internal"
 GIT_SERVER_USER="gitea" #"root"
-GIT_SERVER_TOKEN="ce2dcbf8437a5d53e3c9468fa52e96885193c077" #"glpat-XWbaHBgAL6S5iS1j-s3syW86MQp1OjEH.01.0w1unjram" #"<token>"
+GIT_SERVER_TOKEN="<token>"
 
 # Variables
 declare REPOS=(

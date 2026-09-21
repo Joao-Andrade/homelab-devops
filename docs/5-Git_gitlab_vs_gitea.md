@@ -31,7 +31,7 @@ For this article I will deploy and compare both Gitlab and Gitea and see which o
    - Creating ten repositories
    - Pushing ten changes to each repository
    - Pulling the repositories
-   - Pushing and pulling a relativly big file (10, 50 and 100MB)
+   - Pushing and pulling a relativly big file (10, 50mb)
  - Which web UI I like more
 
 # Preparing Reverse Proxy LXC so both git servers are accessible
@@ -62,6 +62,8 @@ The URL to access from the browser are:
  ```bash
  192.168.1.81	gitlab.internal gitea.internal
  ```
+
+ The ip is the reverse proxy ip. Check [Network section of first article](1-Architecture_and_hardware.md#network) for details on the homelab network.
 
 # Deploying Git Servers on my Homelab
 
@@ -111,11 +113,11 @@ kubectl --kubeconfig ~/.kube/homelab_cluster01 -n gitlab get secret gitlab-gitla
 
 #### Accessing Gitlab
 
-Because I already configured the gitlab access on the reverse proxy LXC and updated the `/etc/hosts` file on my computer, I can access gitlab using the following url: [http://gitlab.internal](http://gitlab.internal). Check [prepare reverse proxy LXC section](#preparing-reverse-proxy-lx-so-both-git-servers-are-accessible) on this article on how I did it.
+Because I already configured the gitlab access on the reverse proxy LXC and updated the `/etc/hosts` file on my computer, I can access gitlab using the following url: [http://gitlab.internal](http://gitlab.internal). Check [prepare reverse proxy LXC section](#preparing-reverse-proxy-lxc-so-both-git-servers-are-accessible) on this article on how I did it.
 
 Login with the user root and the password retrieved on the previous step.
 
-![Gitlab Login Page](/images/git/5-gitea-vs-gitlab-01.png)
+![Gitlab Login Page](./images/5-git-servers-1.png)
 
 ## Deploying Gitea
 
@@ -140,6 +142,14 @@ helm install gitea ./infrastructure/helm-charts/source-control/gitea --kubeconfi
 
 To have the pod ready, it took about 40 seconds.
 
+### Accessing Gitea
+
+Like for Gitlab, because I already configured the gitlab access on the reverse proxy LXC and updated the `/etc/hosts` file on my computer, I can access gitea using the following url: [http://gitea.internal](http://gitea.internal). Check [prepare reverse proxy LXC section](#preparing-reverse-proxy-lxc-so-both-git-servers-are-accessible) on this article on how I did it.
+
+For the password and user, I defined on the helm-chart [values.yaml](https://github.com/Joao-Andrade/homelab-devops/blob/v5/infrastructure/helm-charts/source-control/gitea/values.yaml) file. Of course the values can be overritten to a more secure one or even use a kubernetes secret and not have it as plain text on the values file of the helm chart.
+
+![Gitea Login Page](./images/5-git-servers-2.png)
+
 # Comparing Gitlab and Gitea
 
 On this section I will describe all the tests I performed on both git servers. Because I want to test how fast each git server handles some tasks, I decided to create a script to do most of the tests. I could also do them through the Web UI, but I wanted to have some metric to compare and share.
@@ -150,10 +160,10 @@ Before doing any action, other than accessing from browser and logging in to con
 
 ## Resource consumption baselines
 
-In order to properly evaluate how much RAM and CPU each git server uses, I need to have a baseline. For that, on the management node, I runned the command `kubectl --kubeconfig ~/.kube/config top nodes`. This shows me the resource usage of each node on the cluster. I could check each pod consumption as well, but because any pod can be on any node, I just need to have an overall view of the cluster:
+In order to properly evaluate how much RAM and CPU each git server uses, I need to have a baseline. For that, on the management node, I runned the command `kubectl --kubeconfig ~/.kube/homelab_cluster01 top nodes`. This shows me the resource usage of each node on the cluster. I could check each pod consumption as well, but because any pod can be on any node, I just need to have an overall view of the cluster:
 
 ```bash
-# kubectl --kubeconfig ~/.kube/config top nodes
+# kubectl --kubeconfig ~/.kube/homelab_cluster01 top nodes
 NAME       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)
 k3s-cp01   52m          2%       1813Mi          46%
 k3s-wk01   14m          0%       817Mi           10%
@@ -164,7 +174,7 @@ I also checked Proxmox and compared the CPU and RAM before and after, but will o
 
 ### Gitlab when Idle
 
-After deploying gitlab, I checked the resource usage again after one hour:
+After deploying gitlab, I checked the resource usage after one hour:
 
 ```bash
 # kc01 top nodes
@@ -178,7 +188,7 @@ As it is possible to see, the cluster consumption increased from 77m CPU and 343
 
 ### Gitea when Idle
 
-After deploying gitea, I checked the resource usage again after one hour:
+After deploying gitea, I checked the resource usage after one hour:
 
 ```bash
 # kc01 top nodes
@@ -198,20 +208,32 @@ The tasks I tried to simulate to understand which git server performs faster wer
 
 - Creating and cloning 10 repositories
 - Pushing 10 changes to each repository
-- Pushing 3 big files (10mb, 50mb and 100mb) to each repository
+- Pushing 2 big files (10mb, 50mb) to each repository
 - Cloning the repositories again
 
-I could do some more tests, but I think for some simple tests, it may be enough. The code for the script is [here on my homelab repository](https://github.com/Joao-Andrade/homelab-devops/blob/v5/scripts/management-node/git_servers_tests.sh). Note that I executed the scritp from the management node.
+I could do some more tests, but I think for some simple tests, it may be enough. The code for the script is [on my homelab repository](https://github.com/Joao-Andrade/homelab-devops/blob/v5/scripts/management-node/testing-apps/source-control/git-server-tests.sh). Note that I executed the script from the management node.
 
 ## Getting Gitlab and Gitea access tokens
 
 Before I can do any test through a script, I need to generate an access token on both git servers.
 
+### Gitlab access token
+
 For Gitlab, access through a browser ([see previous section about accessing gitlab](#accessing-gitlab)) and go to profile on top right -> Preferences. On the left menu click on Access -> Personal access tokens. Then click on "Add new token" on top right.
 
-![Gitlab Access Token Creation](/images/5-git-servers-1.png)
+![Gitlab Access Token Creation](./images/5-git-servers-3.png)
 
 I created a token with the `read_repository`, `write_repository`, `read_api` and `api` permissions.
+
+The token generated is going to be used on the script.
+
+### Gitea access token
+
+For Gitea, access through a browser ([see previous section about accessing gitea](#accessing-gitea)) and go to profile on top right -> Settings. On the left menu click on Applications.
+
+![Gitea Access Token Creation](./images/5-git-servers-4.png)
+
+I created a token with the `Read and Write` permissions for `repository` and `user`.
 
 The token generated is going to be used on the script.
 
@@ -239,7 +261,7 @@ tree
 │   └── doc2.md
 ├── example-src
 │   ├── main.sh
-│   └── utils.sh
+│   └── helper.sh
 ├── example-random-files (each repo will have a different number of files with 1mb each)
 │   └── random_file_1.bin
 │   └── random_file_2.bin
@@ -251,6 +273,8 @@ The time it took to do that was:
 | Gitlab | Gitea |
 |---|---|
 | 20s | 22s |
+
+Again, just two seconds difference is not a lot, although if there are a lot of repositories, users or activity on the git server, this can become significant.
 
 ### Pulling the repositories
 
@@ -285,7 +309,7 @@ As it is possible to see on the table, there are not too much difference between
 
 ## Conclusion
 
-The big difference is about resource usage, and number of pods, secrets and pvc deployed by each git server. Gitea consumes a fraction of what Gitlab consumes and it is a single pod and requires fewer pvc's and other resources on the cluster. Gitlab on the other hand, has it's services and functionalities separated between more pods, secrets and pvc's, which can be good for debugging or simple to decouple the application.
+The big difference is about resource usage, and number of pods, secrets and pvc deployed by each git server. Gitea consumes a fraction of what Gitlab consumes and it is a single pod and requires fewer pvc's and other resources on the cluster. Gitlab on the other hand, has it's services and functionalities separated between more pods, secrets and pvc's, which can be good for debugging or simply to decouple the application.
 
 Regarding performance of each git server, both take almost the same time to do the tasks I tried to simulate. Of course it was only me, a single user, doing them, and if it was a big company with lots of users and activity happening on git, maybe the difference would be more noticeable. But, for a homelab or even a small company with few users, I think both git servers are good options with no big differences in performance.
 
@@ -337,7 +361,7 @@ Before deciding if Gitlab or Gitea is better for my homelab, I need to test them
 
 # Next steps
 
-Now that I have a git server, or on this case two, I can move to the next step, which is deploying ArgoCD so I can use it to manage and deploy all the applications from the repositories to the kubernetes cluster. Check the next article [6 - Install ArgoCD](./6-Install_ArgoCD.md).
+Now that I have a git server, or on this case two, I can move to the next step, which is deploying ArgoCD so I can use it to manage and deploy all the applications from the repositories to the kubernetes cluster. Check the next article [6 - Deploy ArgoCD](./6-Deploy_argocd.md).
 
 # Articles
 
@@ -348,3 +372,4 @@ Heres the full list of articles of this series:
  - [3 - Create and configure LXCs](./3-Create_and_conf_LXCs.md)
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
  - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
+ - [6 - Deploy ArgoCD](./6-Deploy_argocd.md)
