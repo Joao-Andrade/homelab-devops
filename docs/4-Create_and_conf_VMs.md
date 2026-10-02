@@ -16,14 +16,14 @@ The code for creating the VMs is located on my repository [Joao-Andrade/homelab-
 
 Regarding the differences on the code to the last article, or tag `v3`, is the following:
 
-- Added a new module called VM. This is used to create each VM.
-- Added a folder called cloud_configs. This contains re-usable cloud-config files. For this article, it is just to add an SSH public key to the debian user and enable the qemu-guest-agent.
+- Added a new module called VM. This is used to create each VM. By default each VM uses memory ballooning, meaning Proxmox can shrink it down to half its configured RAM when idle and grow it back when needed, which is good for resource constrained devices or environments.
+- Added a folder called cloud_configs. This contains re-usable cloud-config files. For this article, it is just to add an SSH public key and passwordless sudo to the debian user (fine for this homelab, but in a production environment, it is worth double checking if this is the way to go) and enable the qemu-guest-agent.
   - Qemu-guest-agent is useful for the communication between the VM and Proxmox and also allows doing some actions like shutdown properly or freeze the filesystem for backups or snapshots.
 - Added a locals.tf file on the environments/homelab-01 folder. This allows setting specific values for each VM and then the main.tf file does a loop to create each VM.
 - Updated the variables.tf file on the environments/homelab-01 folder, which now contains a new variable `proxmox_ssh_private_key_path`. This is necessary to allow OpenTofu to create snippets on Proxmox.
 - Updated the providers.tf file on the infrastructure/opentofu folder to add the configuration on how to connect via SSH to Proxmox, so it allows creating snippets.
 - Updated main.tf on infrastructure/opentofu folder to create the snippet with the reusable could-init configuration, create the three VMs and define firewall rules for each.
-  - About the firewall rules, it allows communication between all nodes of the cluster on ports 6443/tcp for the API, 8472/udp for the flannel overlay, 10250/tcp for the kubelet API. It also opens communication from management nodes on port 6443 so I can use kubectl from there.
+  - About the firewall rules, it allows communication between all nodes of the cluster on ports 6443/tcp for the API, 8472/udp for the flannel overlay, 10250/tcp for the kubelet API. It also opens communication from management nodes on port 6443 so I can use kubectl from there, and allows HTTP/HTTPS from the reverse-proxy LXC so it can forward external traffic to whatever is running on the cluster.
 
 To apply the Opentofu code, on the Management node, cloned the repository and inside the `infrastructure/opentofu/environments/homelab-01` folder, run the following commands:
 
@@ -147,3 +147,10 @@ Here's the full list of articles of this series:
  - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
  - [6 - Deploy ArgoCD](./6-Deploy_argocd.md)
  - [7 - Secrets: Vault vs OpenBao](./7-Secrets_vault_vs_openbao.md)
+ - [8 - Registry: Harbor vs git registries](./8-Registry_harbor_vs_git_registries.md)
+ - [9 - CI tools: Jenkins vs git runners](./9-CI_tools_jenkins_vs_git_runners.md)
+ - [10 - Git server, registry and CI tool: the decision](./10-Git_registry_ci_tool_the_decision.md)
+ - [11 - Code quality: Sonar, Trivy, Semgrep](./11-Code_quality_sonar_trivy_semgrep.md)
+ - [12 - CI/CD](./12-CICD.md)
+ - [13 - Observability: Grafana, Prometheus, Loki, Jaeger, SigNoz](./13-Observability_grafana_prometheus_loki_jaeger_sigmoz.md)
+ - [14 - Conclusions](./14-Conclusions.md)

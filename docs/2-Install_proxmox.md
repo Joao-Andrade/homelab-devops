@@ -193,7 +193,7 @@ For this I will create a new role, group, permissions and user.
 
 To create the role, go to Datacenter -> Permissions -> Roles and click on Create button.
 
-The list of privileges is:
+The list of privileges are:
 
 - Datastore.Allocate
 - Datastore.AllocateSpace
@@ -309,7 +309,7 @@ The templates are on Node -> Local (pve01) -> Templates. On the top right, click
 
 ![2-install-proxmox-10](./images/2-install-proxmox-10.png)
 
-To prepare the Images for the VMs I could download an ISO, but because I don't want to create the VM and then manually installing the OS, I need to import a cloud-ready image. Fortunately, Debian has [official cloud images](https://cloud.debian.org/images/cloud/) ready to use. On Storage -> Local (pve01) -> Import, clicked on Download from URL. I downloaded the Trixie version, which is the latest when I wrote this, namely [this one](https://cloud.debian.org/images/cloud/trixie/20260601-2496/). There are a lot of download options on that page, but the important one is the `debian-13-generic-amd64-20260601-2496.qcow2`, because the "generic" is the one compatible with cloud-init. I could go with Talos Linux, but I decided to go with Debian because I may want to access through ssh to the VM.
+To prepare the Images for the VMs I could download an ISO, but because I don't want to create the VM and then manually installing the OS, I need to import a cloud-ready image. Fortunately, Debian has [official cloud images](https://cloud.debian.org/images/cloud/) ready to use. On Storage -> Local (pve01) -> Import, clicked on Download from URL. I downloaded the Trixie version, which is the latest when I wrote this, namely [this one](https://cloud.debian.org/images/cloud/trixie/20260601-2496/). There are a lot of download options on that page, but the important one is the `debian-13-generic-amd64-20260601-2496.qcow2`, because the "generic" is the one compatible with cloud-init (a standard way to inject SSH keys, users and startup scripts into a VM the first time it boots, instead of installing the OS by hand). I could go with Talos Linux, but I decided to go with Debian because I may want to access through ssh to the VM.
 
 ![2-install-proxmox-11](./images/2-install-proxmox-11.png)
 
@@ -367,7 +367,7 @@ As for the Aliases, I tried to create as many aliases as I though necessary. Her
 | lxc-network-01 | 192.168.1.80/28 | CIDRs 80 to 95
 | vm-network-01 | 192.168.1.100/28 | CIDRs 100 to 115
 | lxc-management-01 | 192.168.1.80 | LXC management node 01
-| lxc-nginx-01 | 192.168.1.81 | LXC with nginx 01
+| lxc-reverse-proxy-01 | 192.168.1.81 | LXC reverse proxy 01
 
 ![2-install-proxmox-19](./images/2-install-proxmox-19.png)
 
@@ -380,6 +380,7 @@ For the IPsets I tried to create the groups I found relevant:
 | lxc-network | lxc-network-01 | All LXCs on the network |
 | vm-network | vm-network-01 | All VMs on the network |
 | management-nodes | lxc-management-01 | Management nodes |
+| reverse-proxy-nodes | lxc-reverse-proxy-01 | Reverse proxy node |
 
 ![2-install-proxmox-20](./images/2-install-proxmox-20.png)
 
@@ -403,7 +404,7 @@ declare -A ALIASES=(
     ["lxc-network-01"]="192.168.1.80/28"
     ["vm-network-01"]="192.168.1.100/28"
     ["lxc-management-01"]="192.168.1.80"
-    ["lxc-nginx-01"]="192.168.1.81"
+    ["lxc-reverse-proxy-01"]="192.168.1.81"
 )
 
 declare -A IPSETS=(
@@ -412,6 +413,7 @@ declare -A IPSETS=(
     ["lxc-network"]="dc/lxc-network-01"
     ["vm-network"]="dc/vm-network-01"
     ["management-nodes"]="dc/lxc-management-01"
+    ["reverse-proxy-nodes"]="dc/lxc-reverse-proxy-01"
 )
 
 NODE="pve01"
@@ -481,3 +483,10 @@ Here's the full list of articles of this series:
  - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
  - [6 - Deploy ArgoCD](./6-Deploy_argocd.md)
  - [7 - Secrets: Vault vs OpenBao](./7-Secrets_vault_vs_openbao.md)
+ - [8 - Registry: Harbor vs git registries](./8-Registry_harbor_vs_git_registries.md)
+ - [9 - CI tools: Jenkins vs git runners](./9-CI_tools_jenkins_vs_git_runners.md)
+ - [10 - Git server, registry and CI tool: the decision](./10-Git_registry_ci_tool_the_decision.md)
+ - [11 - Code quality: Sonar, Trivy, Semgrep](./11-Code_quality_sonar_trivy_semgrep.md)
+ - [12 - CI/CD](./12-CICD.md)
+ - [13 - Observability: Grafana, Prometheus, Loki, Jaeger, SigNoz](./13-Observability_grafana_prometheus_loki_jaeger_sigmoz.md)
+ - [14 - Conclusions](./14-Conclusions.md)

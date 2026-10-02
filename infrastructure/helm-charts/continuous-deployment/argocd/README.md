@@ -19,7 +19,7 @@ helm dependency update
 
 ## Usage
 
-To deploy, can run the command from `infrastructure/helm-charts/continuous-delivery/argocd/`:
+To deploy, can run the command from `infrastructure/helm-charts/continuous-deployment/argocd/`:
 
 ```bash
 helm install argocd . --kubeconfig ~/.kube/homelab_cluster01 --namespace argocd --create-namespace
@@ -57,7 +57,7 @@ To remove ArgoCD and all resources from the cluster, there are a few steps neede
  - **If on another namespace, change the `-n argocd` part of the command, or remove the resources manually**.
 
 - Confirm there is no remaining resources that the helm cannot remove:
-  - `kubectl --kubeconfig ~/.kube/homelab_cluster01 -n argocd get secrets,pvc,pv,configMaps --no-headers'`
+  - `kubectl --kubeconfig ~/.kube/homelab_cluster01 -n argocd get secrets,pvc,pv,configMaps --no-headers`
   - `kubectl --kubeconfig ~/.kube/homelab_cluster01 get applications.argoproj.io,appprojects.argoproj.io,applicationsets.argoproj.io -A`
   - **Delete resources manually if there is something related to argocd**.
 

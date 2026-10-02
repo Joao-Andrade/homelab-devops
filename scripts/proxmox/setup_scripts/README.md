@@ -21,8 +21,8 @@ The order:
 - [5 - Add firewall settings applied on datacenter and node levels](#5---add-firewall-settings-applied-on-datacenter-and-node-levels)
 - [6 - Create the management LXC](#6---create-the-management-lxc)
 - [7 - Configure the management LXC](#7---configure-the-management-lxc)
-- [8 - Create the reverse proxy LXC with OpenTofu](#8---create-the-reverse-proxy-lxc-with-opentofu)
-- [9 - Apply configuration to LXC with Ansible](#9---apply-configuration-to-lxc-with-ansible)
+- [8 - Create the reverse proxy LXC and the VMs with OpenTofu](#8---create-the-reverse-proxy-lxc-and-the-vms-with-opentofu)
+- [9 - Apply configuration to LXC and VMs with Ansible](#9---apply-configuration-to-lxc-and-vms-with-ansible)
 - [10 - What state is the homelab in after all the setup](#10---what-state-is-the-homelab-in-after-all-the-setup)
 
 ## 1 - Update settings to allow access to Proxmox from SSH only with an ssh key
@@ -53,9 +53,9 @@ On the Proxmox server, I created the management LXC by running the following scr
 
 On the management LXC, I configure it by running the following script `scripts/proxmox/setup_scripts/7-configuring_management_lxc.sh`.
 
-## 8 - Create the reverse proxy LXC with OpenTofu
+## 8 - Create the reverse proxy LXC and the VMs with OpenTofu
 
-On the management LXC, I created the reverse proxy LXC by running the following commands:
+On the management LXC, I created the reverse proxy LXC and the VMs that are the kubernetes cluster by running the following commands:
 
 ```bash
 cd infrastructure/opentofu/environments/homelab-01
@@ -64,9 +64,9 @@ tofu plan
 tofu apply
 ```
 
-## 9 - Apply configuration to LXC with Ansible
+## 9 - Apply configuration to LXC and VMs with Ansible
 
-On the management LXC, I configured the LXC using Ansible. For that, I run the following playbook:
+On the management LXC, I configured the LXC and the VMs using Ansible. For that, I run the following playbook:
 
 ```bash
 cd infrastructure/ansible

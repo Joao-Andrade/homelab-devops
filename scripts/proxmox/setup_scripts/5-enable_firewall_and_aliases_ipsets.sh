@@ -22,7 +22,7 @@ declare -A IPSETS=(
     ["lxc-network"]="dc/lxc-network-01"
     ["vm-network"]="dc/vm-network-01"
     ["management-nodes"]="dc/lxc-management-01"
-    ["reverse-proxy"]="dc/lxc-reverse-proxy-01"
+    ["reverse-proxy-nodes"]="dc/lxc-reverse-proxy-01"
 )
 
 NODE="pve01"

@@ -289,7 +289,7 @@ Only from the management LXC should succeed.
 
 ## Using ansible to configure the LXC
 
-On the management LXC, after creating the second LXC with opentofu, I can use Ansible to configure the LXC. On the infrastructure folder, I have the ansible folder with the code to configure the LXC. What it does is simply installing nginx on the reverse proxy LXC. The playbook is called `reverse-proxy.yaml` and it is located in the `playbooks` folder.
+On the management LXC, after creating the second LXC with opentofu, I can use Ansible to configure the LXC. On the infrastructure folder, I have the ansible folder with the code to configure the LXC. What it does is simply installing nginx on the reverse proxy LXC (Will update the configuration as there are more services like for gitlab, gitea or argocd). The playbook is called `reverse-proxy.yaml` and it is located in the `playbooks` folder.
 
 Because I have the ansible.cfg with the inventory and roles locations defined, I can just run the playbook from the `infrastructure/ansible` folder.
 
@@ -313,4 +313,11 @@ Here's the full list of articles of this series:
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
  - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
  - [6 - Deploy ArgoCD](./6-Deploy_argocd.md)
- - [7 - Secrets: Vault vs OpenBao](./7-Secrets_vault_vs_openbao.md) 
+ - [7 - Secrets: Vault vs OpenBao](./7-Secrets_vault_vs_openbao.md)
+ - [8 - Registry: Harbor vs git registries](./8-Registry_harbor_vs_git_registries.md)
+ - [9 - CI tools: Jenkins vs git runners](./9-CI_tools_jenkins_vs_git_runners.md)
+ - [10 - Git server, registry and CI tool: the decision](./10-Git_registry_ci_tool_the_decision.md)
+ - [11 - Code quality: Sonar, Trivy, Semgrep](./11-Code_quality_sonar_trivy_semgrep.md)
+ - [12 - CI/CD](./12-CICD.md)
+ - [13 - Observability: Grafana, Prometheus, Loki, Jaeger, SigNoz](./13-Observability_grafana_prometheus_loki_jaeger_sigmoz.md)
+ - [14 - Conclusions](./14-Conclusions.md) 
