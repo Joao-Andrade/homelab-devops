@@ -11,7 +11,7 @@ For that, on the DHCP configuration of the router, I created IP reservations for
 
 To install proxmox, you can follow the [official guide](https://www.proxmox.com/en/products/proxmox-virtual-environment/get-started), but basically what it tells to do is to download the ISO file, use a tool like [Rufus](https://rufus.ie/) to create a bootable USB drive and then boot the PC from it to install it. 
 
-During the installation process, it asks for some configuration. I choose to install via GUI but there is a CLI version as well. Here's how I configured it, but adapt as see fit for each scenario or environment:
+During the installation process, it asks for some configuration. I chose to install via GUI but there is a CLI version as well. Here's how I configured it, but adapt as see fit for each scenario or environment:
 
 ![2-install-proxmox-1](./images/2-install-proxmox-1.png)
 
@@ -47,7 +47,7 @@ Here's the list of changes I made next:
 6. [Prepare some ISOs and Templates](#6---prepare-some-isos-and-templates)
 7. [Prepare firewall configurations at datacenter level](#7---prepare-firewall-configurations-at-datacenter-level)
 
-## 1 - Run proxmox script to update repositories and disable enterprise repositories
+## 1 - Run Proxmox script to update repositories and disable enterprise repositories
 
 Once logged in, a pop up will appear indicating that there is no valid subscription. This is because we are using the community edition and not the enterprise edition. This is related to updates and we need to change from using the enterprise repositories to the community repositories. 
 
@@ -193,7 +193,7 @@ For this I will create a new role, group, permissions and user.
 
 To create the role, go to Datacenter -> Permissions -> Roles and click on Create button.
 
-The list of previledges is:
+The list of privileges is:
 
 - Datastore.Allocate
 - Datastore.AllocateSpace
@@ -301,7 +301,7 @@ echo "Setting role permissions $ROLENAME for api token $APITOKENNAME"
 pveum acl modify / --role $ROLENAME --token $USERNAME@$REALMNAME!$APITOKENNAME
 ```
 
-## 6 - prepare some Images and Templates
+## 6 - Prepare some Images and Templates
 
 Before creating the VMs and LXCs, I decided to prepare an image for the VMs and a template for the LXCs.
 
@@ -355,7 +355,7 @@ For the node level, select the node level at the left and navigate to Firewall -
 
 ### Aliases and IPsets
 
-The Aliases are just a way to associate a CIDR or IP to a name and the IPset allows to group a few CIDRs and IPs in a set.
+The Aliases are just a way to associate a CIDR or IP to a name and the IPset allows grouping a few CIDRs and IPs in a set.
 
 As for the Aliases, I tried to create as many aliases as I though necessary. Here's the list of the ones I defined:
 
@@ -472,12 +472,12 @@ Now that I have Proxmox installed and configured, I can start creating the VMs a
 
 # Articles:
 
-Heres the full list of articles of this series:
+Here's the full list of articles of this series:
 
  - [1 - Architecture and Hardware](./1-Architecture_and_hardware.md)
  - [2 - Install Proxmox](./2-Install_proxmox.md)
  - [3 - Create and configure LXCs](./3-Create_and_conf_LXCs.md)
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
  - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
- - [6 - Deploy ArgoCD](./6-deploy_argocd.md)
+ - [6 - Deploy ArgoCD](./6-Deploy_argocd.md)
  - [7 - Secrets: Vault vs OpenBao](./7-Secrets_vault_vs_openbao.md)

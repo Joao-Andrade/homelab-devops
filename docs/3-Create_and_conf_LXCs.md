@@ -10,7 +10,7 @@ The first LXC I will deploy will be useful to manage the cluster, Proxmox and th
 
 There is a particularity with this LXC. This is the LXC that is going to have OpenTofu and Ansible to create and configure all the other VMs and LXC, but I cannot use it to create itself, so it needs to be created and configured either manually or through a script. I will explain both ways.
 
-I could do it through OpenTofu and Ansible from my pc, but I want to not need any tool on my pc.
+I could do it through OpenTofu and Ansible from my pc, but I wanted to avoid needing any tool on my pc.
 
 ## Installing and configuring manually through web UI
 
@@ -27,13 +27,13 @@ The first tab contains the general information:
  - Hostname
    - The hostname it should have
  - Unprivileged container
-   - Normally every container should be unpreviledge, unless some specific use case, because it can give access to the host system
+   - Normally every container should be unprivileged, unless some specific use case, because it can give access to the host system
  - Nesting
    - Allows the LXC to create other containers, for example to virtualize or containerize something else. I didn't enable it because I do not need to do that on this LXC
  - Add to HA
    - Only necessary if you have more than one Proxmox node and want to use the High Availability feature. I only have one node, so I didn't enable it
  - Resource Pool
-   - This allows to organize the resources, like VMs and LXCs into groups. This is useful for example if I had different environments, each with its own VMs and LXCs, and I wanted to easily manage each group of VMs on a specific environment. I don't need that for now.
+   - This allows organizing the resources, like VMs and LXCs into groups. This is useful for example if I had different environments, each with its own VMs and LXCs, and I wanted to easily manage each group of VMs on a specific environment. I don't need that for now.
  - Password
    - The password for the root user. Not needed if don't want to access through ssh with password
  - SSH public key
@@ -47,7 +47,7 @@ Here I selected the Debian template.
 
 ![Creating LXC template](./images/3-create-lxc-2.png)
 
-Next is Disk. I set to 20 GB, like on the architecuture overview from the [first article](./1-Architecture_and_hardware.md#architecture).
+Next is Disk. I set to 20 GB, like on the architecture overview from the [first article](./1-Architecture_and_hardware.md#architecture).
 
 ![Creating LXC disk](./images/3-create-lxc-3.png)
 
@@ -247,15 +247,15 @@ Terraform is a tool used to manage the infrastructure using code, or more known 
 |   |-- ....
 ```
 
-The infrastucture folder contains both the Opentofu code to create the LXC and the ansible folder with the code to configure the LXC. It will also contain the helm-charts folder which will have the helm charts for the applications I install, like argocd or gitlab.
+The infrastructure folder contains both the Opentofu code to create the LXC and the ansible folder with the code to configure the LXC. It will also contain the helm-charts folder which will have the helm charts for the applications I install, like argocd or gitlab.
 
 Inside the opentofu folder, there are three folders: states, modules and environments.
- - The states folder contains the state of the infrastucture. When using opentofu, for example `tofu apply`, it creates a state file to keep track of the resources that were created and what changes are on the code compared to the state file.
+ - The states folder contains the state of the infrastructure. When using opentofu, for example `tofu apply`, it creates a state file to keep track of the resources that were created and what changes are on the code compared to the state file.
  - The modules folder contains the code to create a LXC and a VM.
  - The environments folder contains the code to create the resources on different environments, but since I only have one environment, it only contains the homelab-01 folder.
 
 Inside the ansibles folder, there are three folders and a file:
- - The ansible.cfg allows to configure various configurations including the inventory and roles locations.
+ - The ansible.cfg allows configuring various settings including the inventory and roles locations.
  - The inventory folder contains the hosts where ansible will connect to.
  - The playbooks folder contains the playbooks. A playbook is a list of tasks to execute on one or more hosts.
  - The roles folder contains reusable code, similar to opentofu's modules. For example, I just created one to update the apt cache and upgrade the packages on debian hosts.
@@ -264,7 +264,7 @@ Inside the helm-charts folder, it contains the helm charts for the applications 
 
 ## Using opentofu to create the LXC
 
-On the management LXC and the github repository cloned, check [Creating and configuring the reverse proxy LXC](#creating-and-configuring-the-reverse-proxy-lxc), navigated to the `infrastructure/opentofu/environments/homelab-01` folder. This folder has the same structure as shown in the previous section [Terraform and Ansible folder structure](#terraform-and-ansible-folder-structure). **NOTE** that the code for only what is described on this article is on tag `v3`.
+On the management LXC and the github repository cloned, check [Creating and configuring the reverse proxy LXC](#creating-and-configuring-the-reverse-proxy-lxc), navigated to the `infrastructure/opentofu/environments/homelab-01` folder. This folder has the same structure as shown in the previous section [Terraform and Ansible folder structure](#terraform-and-ansible-folder-structure). **NOTE** that the code for only what is described in this article is on tag `v3`.
 
 The code creates three resources. The LXC, enables the LXC firewall and adds firewall rules to:
  - Allow SSH from the management LXC
@@ -305,12 +305,12 @@ Now that I have a management LXC and already tried creating and configuring reso
 
 # Articles:
 
-Heres the full list of articles of this series:
+Here's the full list of articles of this series:
 
  - [1 - Architecture and Hardware](./1-Architecture_and_hardware.md)
  - [2 - Install Proxmox](./2-Install_proxmox.md)
  - [3 - Create and configure LXCs](./3-Create_and_conf_LXCs.md)
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
  - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
- - [6 - Deploy ArgoCD](./6-deploy_argocd.md)
+ - [6 - Deploy ArgoCD](./6-Deploy_argocd.md)
  - [7 - Secrets: Vault vs OpenBao](./7-Secrets_vault_vs_openbao.md) 

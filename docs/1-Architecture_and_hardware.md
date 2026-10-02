@@ -106,7 +106,7 @@ I used Proxmox. The main reasons are it is free and open-source, it is widely re
 
 ### Secrets (To have the secrets available to the cluster and possibly other applications):
  - Hashicorp Vault
-   - Very complete package, it is used by a lot of companies, but some features are hidden behind a enterprise license. Since I just want to store credentials and don't need all the features, like the namespaces, it should be fine.
+   - Very complete package, it is used by a lot of companies, but some features are hidden behind an enterprise license. Since I just want to store credentials and don't need all the features, like the namespaces, it should be fine.
  - OpenBao
    - It is a fork of Hashicorp Vault. It doesn't have all the features of Vault yet, although there is a roadmap where they plan on implement some missing features.
 
@@ -151,12 +151,12 @@ Now that it is possible to understand what I want to do and a high level view of
 
 # Articles:
 
-Heres the full list of articles of this series:
+Here's the full list of articles of this series:
 
  - [1 - Architecture and Hardware](./1-Architecture_and_hardware.md)
  - [2 - Install Proxmox](./2-Install_proxmox.md)
  - [3 - Create and configure LXCs](./3-Create_and_conf_LXCs.md)
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
  - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
- - [6 - Deploy ArgoCD](./6-deploy_argocd.md)
+ - [6 - Deploy ArgoCD](./6-Deploy_argocd.md)
  - [7 - Secrets: Vault vs OpenBao](./7-Secrets_vault_vs_openbao.md)

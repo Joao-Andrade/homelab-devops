@@ -1,12 +1,12 @@
 # Introduction
 
-On the last article, I reached a milestone on this project. The Kubernetes cluster was created on the VMs and successfully deployed a simple Nginx pod. Now, I can start working on creating my CICD pipeline and learn how some applications work and re-learn about some applications I had the opportunity to work with before.
+In the last article, I reached a milestone on this project. The Kubernetes cluster was created on the VMs and successfully deployed a simple Nginx pod. Now, I can start working on creating my CICD pipeline and learn how some applications work and re-learn about some applications I had the opportunity to work with before.
 
-For this article I will deploy and compare two git servers, Gitlab and Gitea. Both will be deployed using helm charts. I will compare only their functionality as a git server on this, because both of them have features that I will try out on the next articles, for example CI/CD tools or the registry. I will not make a decision on which will use on my homelab on this article, because I need to compare them with those features against other tools for each component, for example comparing the registry feature of gitlab/gitea against Harbor, or CI features agains Jenkins.
+For this article I will deploy and compare two git servers, Gitlab and Gitea. Both will be deployed using helm charts. I will compare only their functionality as a git server on this, because both of them have features that I will try out on the next articles, for example CI/CD tools or the registry. I will not make a decision on which will use on my homelab in this article, because I need to compare them with those features against other tools for each component, for example comparing the registry feature of gitlab/gitea against Harbor, or CI features against Jenkins.
 
 ## Why Gitea and Gitlab
 
-There are a lot of git servers available, I could just use Github, but since I am building a homelab, I want to deploy a git server as well. Besides, it is what many companies do to keep all their repositories as private as possible. So I needed to decide between the available options that can be self-hosted and decided to go with Gitea and Gitlab, mainly because both of them are popular options and have good documentation online. Check the first article [1-Architecture_and_hardware (source control options)](1-Architecture_and_hardware.md#source-control-to-store-repositories) for the reasons of each choice, heres the overview: 
+There are a lot of git servers available, I could just use Github, but since I am building a homelab, I want to deploy a git server as well. Besides, it is what many companies do to keep all their repositories as private as possible. So I needed to decide between the available options that can be self-hosted and decided to go with Gitea and Gitlab, mainly because both of them are popular options and have good documentation online. Check the first article [1-Architecture_and_hardware (source control options)](1-Architecture_and_hardware.md#source-control-to-store-repositories) for the reasons of each choice, here's the overview:
 
  - Gitlab:
    - Very complete package
@@ -20,7 +20,7 @@ There are a lot of git servers available, I could just use Github, but since I a
    - Can have registry
    - Lightweight on resources
 
-## What I will compare on this article
+## What I will compare in this article
 
 For this article I will deploy and compare both Gitlab and Gitea and see which one fits better for my homelab. For that I will use some metrics and try some operations on both:
 
@@ -31,12 +31,12 @@ For this article I will deploy and compare both Gitlab and Gitea and see which o
    - Creating ten repositories
    - Pushing ten changes to each repository
    - Pulling the repositories
-   - Pushing and pulling a relativly big file (10, 50mb)
+   - Pushing and pulling a relatively big file (10, 50mb)
  - Which web UI I like more
 
 # Preparing Reverse Proxy LXC so both git servers are accessible
 
-On a previous article [3-Create and configure LXCs](3-Create_and_conf_LXCs.md#creating-and-configuring-the-reverse-proxy-lxc), I installed and configured a reverse proxy on a LXC container on Proxmox, in order to have a single entry point to all my services. Now I will make use of it. In order to be able to connect to both Gitlab and Gitea, I need to expose them through the reverse proxy.
+In a previous article [3-Create and configure LXCs](3-Create_and_conf_LXCs.md#creating-and-configuring-the-reverse-proxy-lxc), I installed and configured a reverse proxy on a LXC container on Proxmox, in order to have a single entry point to all my services. Now I will make use of it. In order to be able to connect to both Gitlab and Gitea, I need to expose them through the reverse proxy.
 
 To do that I created a new Ansible playbook `update-reverse-proxy-config.yaml` on [infrastructure/ansible/playbooks/ of my homelab repository](https://github.com/Joao-Andrade/homelab-devops/tree/v5/infrastructure/ansible/playbooks/update-reverse-proxy-config.yaml). What this playbook does is:
 
@@ -53,25 +53,25 @@ ansible-playbook update-reverse-proxy-config.yaml
 
 Note that they are only accessible once deployed on the cluster.
 
-The URL to access from the browser are:
+The URLs to access from the browser are:
  - http://gitlab.internal
  - http://gitea.internal
- 
- On the computer that will access from the browser, I needed to edit the `/etc/hosts` file to add the following line:
- 
- ```bash
- 192.168.1.81	gitlab.internal gitea.internal
- ```
 
- The ip is the reverse proxy ip. Check [Network section of first article](1-Architecture_and_hardware.md#network) for details on the homelab network.
+On the computer that will access from the browser, I needed to edit the `/etc/hosts` file to add the following line:
+
+```bash
+192.168.1.81	gitlab.internal gitea.internal
+```
+
+The ip is the reverse proxy ip. Check [Network section of first article](1-Architecture_and_hardware.md#network) for details on the homelab network.
 
 # Deploying Git Servers on my Homelab
 
-On this section I will go through the process of deploying both Gitlab and Gitea on my kubernetes cluster. For each, I will first create the helm charts and then deploy the application.
+In this section I will go through the process of deploying both Gitlab and Gitea on my kubernetes cluster. For each, I will first create the helm charts and then deploy the application.
 
 ## Deploying Gitlab
 
-Because Gitlab is a heavy application, there is the possiblility to disable some features in order to reduce the resource usage. On my helm chart, I disabled the following features, because I will not use them on my homelab, at least for now:
+Because Gitlab is a heavy application, there is the possibility to disable some features in order to reduce the resource usage. On my helm chart, I disabled the following features, because I will not use them on my homelab, at least for now:
 
 - Container Registry
 - GitLab Agent Server for Kubernetes
@@ -105,7 +105,7 @@ Until pods were ready it took about 2 minutes.
 
 #### Getting the password
 
-To get the initial password to access gitlab, I runned the following command from the management node:
+To get the initial password to access gitlab, I ran the following command from the management node:
 
 ```bash
 kubectl --kubeconfig ~/.kube/homelab_cluster01 -n gitlab get secret gitlab-gitlab-initial-root-password -o jsonpath="{.data.password}" | base64 --decode; echo
@@ -113,7 +113,7 @@ kubectl --kubeconfig ~/.kube/homelab_cluster01 -n gitlab get secret gitlab-gitla
 
 #### Accessing Gitlab
 
-Because I already configured the gitlab access on the reverse proxy LXC and updated the `/etc/hosts` file on my computer, I can access gitlab using the following url: [http://gitlab.internal](http://gitlab.internal). Check [prepare reverse proxy LXC section](#preparing-reverse-proxy-lxc-so-both-git-servers-are-accessible) on this article on how I did it.
+Because I already configured the gitlab access on the reverse proxy LXC and updated the `/etc/hosts` file on my computer, I can access gitlab using the following url: [http://gitlab.internal](http://gitlab.internal). Check [prepare reverse proxy LXC section](#preparing-reverse-proxy-lxc-so-both-git-servers-are-accessible) in this article on how I did it.
 
 Login with the user root and the password retrieved on the previous step.
 
@@ -121,14 +121,14 @@ Login with the user root and the password retrieved on the previous step.
 
 ## Deploying Gitea
 
-Gitea is more lightweight than Gitlab, but even so, it has some services availabe that I don't use, so I can disable them to use even less resources. These services are:
+Gitea is more lightweight than Gitlab, but even so, it has some services available that I don't use, so I can disable them to use even less resources. These services are:
 
 - Postgres
 - Valkey
 
 ### Creating Gitea helm chart
 
-Similar to gitlab, Gitea has an [offical helm chart](https://gitea.com/gitea/helm-gitea). I created a custom chart based on the offical one and configured the values file to disable some features, namely Postgres and Valkey, and set some values.
+Similar to gitlab, Gitea has an [official helm chart](https://gitea.com/gitea/helm-gitea). I created a custom chart based on the official one and configured the values file to disable some features, namely Postgres and Valkey, and set some values.
 
 On [infrastructure/helm-charts/source-control/gitea/](https://github.com/Joao-Andrade/homelab-devops/blob/v5/infrastructure/helm-charts/source-control/gitea/) there are two files. `Chart.yaml` references the official one and `values.yaml` defines the values I override.
 
@@ -144,23 +144,23 @@ To have the pod ready, it took about 40 seconds.
 
 ### Accessing Gitea
 
-Like for Gitlab, because I already configured the gitlab access on the reverse proxy LXC and updated the `/etc/hosts` file on my computer, I can access gitea using the following url: [http://gitea.internal](http://gitea.internal). Check [prepare reverse proxy LXC section](#preparing-reverse-proxy-lxc-so-both-git-servers-are-accessible) on this article on how I did it.
+Like for Gitlab, because I already configured the gitlab access on the reverse proxy LXC and updated the `/etc/hosts` file on my computer, I can access gitea using the following url: [http://gitea.internal](http://gitea.internal). Check [prepare reverse proxy LXC section](#preparing-reverse-proxy-lxc-so-both-git-servers-are-accessible) in this article on how I did it.
 
-For the password and user, I defined on the helm-chart [values.yaml](https://github.com/Joao-Andrade/homelab-devops/blob/v5/infrastructure/helm-charts/source-control/gitea/values.yaml) file. Of course the values can be overritten to a more secure one or even use a kubernetes secret and not have it as plain text on the values file of the helm chart.
+For the password and user, I defined on the helm-chart [values.yaml](https://github.com/Joao-Andrade/homelab-devops/blob/v5/infrastructure/helm-charts/source-control/gitea/values.yaml) file. Of course the values can be overwritten to a more secure one or even use a kubernetes secret and not have it as plain text on the values file of the helm chart.
 
 ![Gitea Login Page](./images/5-git-servers-2.png)
 
 # Comparing Gitlab and Gitea
 
-On this section I will describe all the tests I performed on both git servers. Because I want to test how fast each git server handles some tasks, I decided to create a script to do most of the tests. I could also do them through the Web UI, but I wanted to have some metric to compare and share.
+In this section I will describe all the tests I performed on both git servers. Because I want to test how fast each git server handles some tasks, I decided to create a script to do most of the tests. I could also do them through the Web UI, but I wanted to have some metric to compare and share.
 
 At no time, both servers were running at same time. Either Gitlab or Gitea was running on the cluster.
 
-Before doing any action, other than accessing from browser and logging in to confirm it works, I left both git servers running for 1 hour, in order to let them settle and have a better idea of their resource consumption and efficiency on doing the tasks. It may have no real impact, but that way I think it garantees it is stable and not doing any initialization task.
+Before doing any action, other than accessing from browser and logging in to confirm it works, I left both git servers running for 1 hour, in order to let them settle and have a better idea of their resource consumption and efficiency on doing the tasks. It may have no real impact, but that way I think it guarantees it is stable and not doing any initialization task.
 
 ## Resource consumption baselines
 
-In order to properly evaluate how much RAM and CPU each git server uses, I need to have a baseline. For that, on the management node, I runned the command `kubectl --kubeconfig ~/.kube/homelab_cluster01 top nodes`. This shows me the resource usage of each node on the cluster. I could check each pod consumption as well, but because any pod can be on any node, I just need to have an overall view of the cluster:
+In order to properly evaluate how much RAM and CPU each git server uses, I need to have a baseline. For that, on the management node, I ran the command `kubectl --kubeconfig ~/.kube/homelab_cluster01 top nodes`. This shows me the resource usage of each node on the cluster. I could check each pod consumption as well, but because any pod can be on any node, I just need to have an overall view of the cluster:
 
 ```bash
 # kubectl --kubeconfig ~/.kube/homelab_cluster01 top nodes
@@ -246,7 +246,7 @@ The time it took to create and clone 10 empty repositories is as follows:
 | Create 10 repositories  | 5s | 6s |
 | Clone 10 repositories  | 10s | 9s |
 
-Athough there is a difference of a second on each task, I don't think it is significant and will assume both Gitlab and Gitea takes the same tame to create repositories and it takes the same time to clone a repository.
+Although there is a difference of a second on each task, I don't think it is significant and will assume both Gitlab and Gitea take the same time to create repositories and it takes the same time to clone a repository.
 
 ### Pushing 10 changes to each repository
 
@@ -309,13 +309,13 @@ As it is possible to see on the table, there are not too much difference between
 
 ## Conclusion
 
-The big difference is about resource usage, and number of pods, secrets and pvc deployed by each git server. Gitea consumes a fraction of what Gitlab consumes and it is a single pod and requires fewer pvc's and other resources on the cluster. Gitlab on the other hand, has it's services and functionalities separated between more pods, secrets and pvc's, which can be good for debugging or simply to decouple the application.
+The big difference is about resource usage, and number of pods, secrets and pvc deployed by each git server. Gitea consumes a fraction of what Gitlab consumes and it is a single pod and requires fewer pvc's and other resources on the cluster. Gitlab on the other hand, has its services and functionalities separated between more pods, secrets and pvc's, which can be good for debugging or simply to decouple the application.
 
 Regarding performance of each git server, both take almost the same time to do the tasks I tried to simulate. Of course it was only me, a single user, doing them, and if it was a big company with lots of users and activity happening on git, maybe the difference would be more noticeable. But, for a homelab or even a small company with few users, I think both git servers are good options with no big differences in performance.
 
 # Cleaning Gitlab or Gitea installations
 
-On this section I will explain how to uninstall Gitlab or Gitea from the cluster, because `helm uninstall` doesn't clean everything. PVC and secrets.
+In this section I will explain how to uninstall Gitlab or Gitea from the cluster, because `helm uninstall` doesn't clean everything. PVC and secrets.
 
 ## Cleaning Gitlab
 
@@ -335,7 +335,7 @@ To remove Gitlab and all resources from the cluster, there are a few steps neede
 
 ## Cleaning Gitea
 
-To remove Gitea and it's resources from the cluster, the steps are similar to Gitlab:
+To remove Gitea and its resources from the cluster, the steps are similar to Gitlab:
 
 - First remove the helm chart:
   - `helm uninstall gitea --kubeconfig ~/.kube/homelab_cluster01 --namespace gitea --wait`
@@ -365,7 +365,7 @@ Now that I have a git server, or on this case two, I can move to the next step, 
 
 # Articles
 
-Heres the full list of articles of this series:
+Here's the full list of articles of this series:
 
  - [1 - Architecture and Hardware](./1-Architecture_and_hardware.md)
  - [2 - Install Proxmox](./2-Install_proxmox.md)
