@@ -1,0 +1,50 @@
+# Values for the argocd chart.
+
+argo-cd:
+  # ---------------------------------------------------------------------------
+  # Required basics
+  # ---------------------------------------------------------------------------
+  global:
+    # Base domain, inherited by the server ingress, notifications and
+    # certificates unless overridden individually.
+    domain: argocd.internal
+
+  configs:
+    params:
+      # No TLS/cert-manager for now - reverse-proxy LXC terminates HTTP only,
+      # so tell the server not to redirect to/require HTTPS itself.
+      "server.insecure": true
+
+  server:
+    replicas: 1
+    ingress:
+      enabled: true
+      ingressClassName: "traefik"
+      # hostname left empty on purpose - defaults to global.domain above.
+
+  repoServer:
+    replicas: 1
+
+  controller:
+    replicas: 1
+
+  applicationSet:
+    replicas: 1
+
+  # ---------------------------------------------------------------------------
+  # Optional components - disabled to keep resource usage down
+  # ---------------------------------------------------------------------------
+
+  # SSO - not needed, only using the local admin account for now.
+  dex:
+    enabled: false
+
+  # Notifications controller (Slack/email/etc on app sync events) - not
+  # needed yet, can be re-enabled later.
+  notifications:
+    enabled: false
+
+  # Keep the single-instance Redis (default) instead of the Redis HA
+  # subchart - no need for HA on a single-node homelab cluster.
+  redis-ha:
+    enabled: false

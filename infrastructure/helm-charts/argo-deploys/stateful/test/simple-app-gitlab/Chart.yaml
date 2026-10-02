@@ -1,0 +1,10 @@
+apiVersion: v2
+name: simple-app-gitlab
+description: >-
+  Copy of simple-app, used to test the argo-deploys-stateful ApplicationSet
+  wired to GitLab end-to-end (nothing stateful about this app itself, it's
+  just a connectivity test - delete this folder once the pairing is confirmed
+  working).
+type: application
+version: 0.1.0
+appVersion: "1.29"

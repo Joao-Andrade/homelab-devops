@@ -1,0 +1,14 @@
+apiVersion: v2
+name: hashicorp-vault
+description: >-
+  I used the official HashiCorp Vault helm chart as a base, and customized the
+  values file. Runs Vault in standalone mode (single pod, file storage) since
+  this is a single-node homelab cluster - no Raft HA needed. The Agent
+  Injector is disabled by default since nothing consumes Vault secrets yet.
+type: application
+version: 0.1.0
+appVersion: "v2.0.4" # Actual vault version
+dependencies:
+  - name: vault
+    version: "0.34.1" # Official helm version
+    repository: "https://helm.releases.hashicorp.com"

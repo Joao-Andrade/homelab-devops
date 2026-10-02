@@ -1,0 +1,49 @@
+# ApplicationSet so every chart under argo-deploys/<category>/<chart-name>/ as its own
+# ArgoCD Application.
+#
+# This applicaitonset needs to be applied manually:
+#
+#   kubectl apply -f applicationset-stateless.yaml -n argocd --kubeconfig ~/.kube/homelab_cluster01
+#
+# After that, adding a new chart is just: create argo-deploys/<category>/<name>/
+# with a Chart.yaml + values.yaml and push. No Application manifest to write by hand.
+#
+# "Stateless" here means: nothing here would be missed if it got wiped and
+# redeployed from scratch (no PVCs, no data you can't just regenerate). No
+# preserveResourcesOnDeletion so removing the folder fully tears down
+# whatever it deployed, which is the point for throwaway/easily-rebuilt apps.
+#
+# Pointed at Gitea (stateful is pointed at GitLab instead) - deliberately
+# testing both git servers, one per ApplicationSet.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: argo-deploys-stateless
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea/homelab-devops.git
+        revision: main
+        directories:
+          - path: infrastructure/helm-charts/argo-deploys/stateless/*/*
+
+  template:
+    metadata:
+      name: '{{path.basename}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea/homelab-devops.git
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+        syncOptions:
+          - CreateNamespace=true

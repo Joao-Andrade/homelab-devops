@@ -313,3 +313,4 @@ Heres the full list of articles of this series:
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
  - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
  - [6 - Deploy ArgoCD](./6-deploy_argocd.md)
+ - [7 - Secrets: Vault vs OpenBao](./7-Secrets_vault_vs_openbao.md) 

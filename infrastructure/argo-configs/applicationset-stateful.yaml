@@ -1,0 +1,59 @@
+# ApplicationSet so every chart under argo-deploys/<category>/<chart-name>/ as its own
+# ArgoCD Application.
+#
+# This applicaitonset needs to be applied manually:
+#
+#   kubectl apply -f applicationset-stateful.yaml -n argocd --kubeconfig ~/.kube/homelab_cluster01
+#
+# After that, adding a new chart is just: create argo-deploys/<category>/<name>/
+# with a Chart.yaml + values.yaml and push. No Application manifest to write by hand.
+#
+# "Stateful" here means: has real data worth protecting (Vault's secrets,
+# a database, Gitea/GitLab repos, etc). preserveResourcesOnDeletion is on,
+# so deleting the folder removes the Application object but leaves the
+# deployed resources (and their PVCs/data) alone - needs to be cleaned by hand.
+# This way there is no risk of a git mistake cascading into a data wipe.
+#
+# Pointed at GitLab (stateless is pointed at Gitea instead) - this is
+# deliberately testing both git servers, one per ApplicationSet.
+#
+# hashicorp-vault is excluded below for now while the simple-app-gitlab test
+# chart confirms the GitLab wiring end-to-end - remove the exclude once
+# that's verified and vault's own setup (Chart.lock, token, etc.) is ready.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: argo-deploys-stateful
+  namespace: argocd
+spec:
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  generators:
+    - git:
+        repoURL: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/root/homelab-devops.git
+        revision: main
+        directories:
+          - path: infrastructure/helm-charts/argo-deploys/stateful/*/*
+          - path: infrastructure/helm-charts/argo-deploys/stateful/secrets-manager/hashicorp-vault
+            exclude: true
+
+  template:
+    metadata:
+      name: '{{path.basename}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/root/homelab-devops.git
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+        syncOptions:
+          - CreateNamespace=true

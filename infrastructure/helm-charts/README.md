@@ -10,6 +10,10 @@ Charts are separated by functionality. For example all git server related compon
 - [`source-control`](./source-control) — git server components:
     - [`gitlab`](./source-control/gitlab) — wrapper chart around the official GitLab Helm chart, with optional components disabled by default.
     - [`gitea`](./source-control/gitea) — Chart to deploy Gitea.
+- [`continuous-delivery`](./continuous-delivery) — GitOps/deployment components:
+    - [`argocd`](./continuous-delivery/argocd) — wrapper chart around the official Argo CD Helm chart, with Dex and notifications disabled by default.
+- [`argo-deploys`](./argo-deploys) — Helm charts that are managed by ArgoCD. While the other folders are helms installed and managed manually, these are deployed from git repositories by ArgoCD.
+
 
 ## Useful commands
 

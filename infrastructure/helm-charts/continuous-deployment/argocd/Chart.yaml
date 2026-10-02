@@ -1,0 +1,13 @@
+apiVersion: v2
+name: argocd
+description: >-
+  I used the official Argo CD helm chart as a base, and customized the values
+  file. Disabled Dex (SSO) and the notifications controller to keep it
+  lightweight, and used the single-instance Redis instead of Redis HA.
+type: application
+version: 0.1.0
+appVersion: "v3.5.3" # Actual argocd version
+dependencies:
+  - name: argo-cd
+    version: "10.9.2" # Official helm version
+    repository: "https://argoproj.github.io/argo-helm"
