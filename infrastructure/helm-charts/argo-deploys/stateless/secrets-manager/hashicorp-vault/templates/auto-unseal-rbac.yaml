@@ -1,0 +1,37 @@
+# Scoped as tightly as Kubernetes RBAC allows: get/update are restricted to the
+# one named secret this script uses. "create" can't be restricted by name
+# (the object doesn't exist yet when the request is authorized), so it's
+# scoped to the resource type within this namespace only - still contained to
+# just the hashicorp-vault namespace, not cluster-wide.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-unseal-secret-manager
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["{{ .Release.Name }}-unseal-keys"]
+    verbs: ["get", "update"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-unseal-secret-manager
+  namespace: {{ .Release.Namespace }}
+subjects:
+  # NOTE: assumes the vault subchart's generated ServiceAccount name equals
+  # the release name (true as long as the release name contains "vault",
+  # which "hashicorp-vault" does) - verify with:
+  #   kubectl get sa -n {{ .Release.Namespace }}
+  # and adjust this name if it doesn't match.
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Release.Name }}-unseal-secret-manager
+  apiGroup: rbac.authorization.k8s.io

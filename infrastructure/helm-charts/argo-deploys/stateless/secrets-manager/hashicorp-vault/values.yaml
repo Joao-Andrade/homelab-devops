@@ -1,26 +1,26 @@
 # Values for the hashicorp-vault chart.
 
 vault:
-  # No TLS/cert-manager for now - same as the other charts, the reverse-proxy
-  # LXC only terminates HTTP.
+  # No TLS/cert-manager for now
   global:
     tlsDisable: true
 
   # Agent Injector (auto-injects Vault secrets into other pods' containers) -
-  # not needed yet, nothing consumes Vault secrets. Enable later once an app
-  # actually needs it.
+  # not needed yet. Enable later once an app needs it.
   injector:
     enabled: false
 
   server:
     # Standalone mode (single pod, file storage) instead of Raft HA -
-    # there's only one node in this cluster, HA buys nothing here.
+    # there's only one node in this cluster
     ha:
       enabled: false
 
     standalone:
       enabled: true
       config: |
+        ui = true
+
         listener "tcp" {
           address     = "[::]:8200"
           cluster_address = "[::]:8201"
@@ -48,6 +48,31 @@ vault:
       hosts:
         - host: vault.internal
           paths: []
+
+    # Auto-unseal sidecar
+    # NOTE: "hashicorp-vault" here is hardcoded to match the Helm release name
+    #If this chart's folder and the release name is renamed, update this too, or
+    # the ConfigMap volume mount will fail to find a match and the pod won't start.
+    volumes:
+      - name: auto-unseal-script
+        configMap:
+          name: hashicorp-vault-auto-unseal-script
+          defaultMode: 0o755
+
+    extraContainers:
+      - name: auto-unseal
+        image: alpine/k8s:1.33.10
+        command: ["/bin/sh", "/scripts/auto-unseal.sh"]
+        volumeMounts:
+          - name: auto-unseal-script
+            mountPath: /scripts
+        resources:
+          requests:
+            cpu: 20m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
 
   ui:
     enabled: true

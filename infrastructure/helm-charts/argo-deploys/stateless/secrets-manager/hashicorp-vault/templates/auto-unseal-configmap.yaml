@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-auto-unseal-script
+data:
+  auto-unseal.sh: |
+    #!/bin/sh
+    set -e
+
+    VAULT_ADDR="http://127.0.0.1:8200"
+    NAMESPACE="$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)"
+    SECRET_NAME="{{ .Release.Name }}-unseal-keys"
+    KEY_SHARES=5
+    KEY_THRESHOLD=3
+
+    echo "Waiting for Vault's API to respond..."
+    until curl -s -o /dev/null "$VAULT_ADDR/v1/sys/seal-status"; do
+      sleep 2
+    done
+
+    while true; do
+      STATUS="$(curl -s "$VAULT_ADDR/v1/sys/seal-status")"
+      INITIALIZED="$(echo "$STATUS" | jq -r '.initialized')"
+      SEALED="$(echo "$STATUS" | jq -r '.sealed')"
+
+      if [ "$INITIALIZED" = "false" ]; then
+        if kubectl get secret "$SECRET_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+          # Vault says uninitialized but a keys secret already exists
+          # meaning the data volume was wiped/recreated while the old secret survived.
+          # Refusing to auto-init here on purpose. If on purpose, delete the stale secret so this script can re-init.
+          echo "ERROR: Vault is uninitialized but secret $SECRET_NAME already exists."
+          echo "Not auto-initializing. Delete the stale secret manually if you want to re-initialize."
+          sleep 60
+          continue
+        fi
+
+        echo "Vault is uninitialized - running first-time init and storing keys in $SECRET_NAME..."
+        INIT_OUTPUT="$(curl -s --request POST \
+          --data "{\"secret_shares\": $KEY_SHARES, \"secret_threshold\": $KEY_THRESHOLD}" \
+          "$VAULT_ADDR/v1/sys/init")"
+        kubectl create secret generic "$SECRET_NAME" -n "$NAMESPACE" \
+          --from-literal=init-output="$INIT_OUTPUT" \
+          --dry-run=client -o yaml | kubectl apply -f -
+        echo "Init complete."
+      fi
+
+      if [ "$SEALED" = "true" ]; then
+        echo "Vault is sealed - unsealing from $SECRET_NAME..."
+        INIT_OUTPUT="$(kubectl get secret "$SECRET_NAME" -n "$NAMESPACE" -o jsonpath='{.data.init-output}' | base64 -d)"
+        for KEY in $(echo "$INIT_OUTPUT" | jq -r ".keys_base64[0:$KEY_THRESHOLD][]"); do
+          curl -s --request POST --data "{\"key\": \"$KEY\"}" "$VAULT_ADDR/v1/sys/unseal" > /dev/null
+        done
+        echo "Unseal attempted."
+      fi
+
+      # Loop (rather than exit after one pass) so a main-container-only restart
+      # (kubelet restarting just the vault container, not the whole pod) still
+      # gets caught and re-unsealed without this sidecar itself needing to restart.
+      sleep 30
+    done

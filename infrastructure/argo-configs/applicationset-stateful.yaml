@@ -17,9 +17,7 @@
 # Pointed at GitLab (stateless is pointed at Gitea instead) - this is
 # deliberately testing both git servers, one per ApplicationSet.
 #
-# hashicorp-vault is excluded below for now while the simple-app-gitlab test
-# chart confirms the GitLab wiring end-to-end - remove the exclude once
-# that's verified and vault's own setup (Chart.lock, token, etc.) is ready.
+
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -35,8 +33,8 @@ spec:
         revision: main
         directories:
           - path: infrastructure/helm-charts/argo-deploys/stateful/*/*
-          - path: infrastructure/helm-charts/argo-deploys/stateful/secrets-manager/hashicorp-vault
-            exclude: true
+          # - path: infrastructure/helm-charts/argo-deploys/stateful/secrets-manager/hashicorp-vault
+          #   exclude: true
 
   template:
     metadata:
