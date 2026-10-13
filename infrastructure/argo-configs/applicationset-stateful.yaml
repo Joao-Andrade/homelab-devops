@@ -1,14 +1,14 @@
 # ApplicationSet so every chart under argo-deploys/<category>/<chart-name>/ as its own
 # ArgoCD Application.
 #
-# This applicaitonset needs to be applied manually:
+# This ApplicationSet needs to be applied manually:
 #
 #   kubectl apply -f applicationset-stateful.yaml -n argocd --kubeconfig ~/.kube/homelab_cluster01
 #
 # After that, adding a new chart is just: create argo-deploys/<category>/<name>/
 # with a Chart.yaml + values.yaml and push. No Application manifest to write by hand.
 #
-# "Stateful" here means: has real data worth protecting (Vault's secrets,
+# "Stateful" here means: has real data worth protecting (OpenBao's secrets,
 # a database, Gitea/GitLab repos, etc). preserveResourcesOnDeletion is on,
 # so deleting the folder removes the Application object but leaves the
 # deployed resources (and their PVCs/data) alone - needs to be cleaned by hand.
@@ -33,8 +33,6 @@ spec:
         revision: main
         directories:
           - path: infrastructure/helm-charts/argo-deploys/stateful/*/*
-          # - path: infrastructure/helm-charts/argo-deploys/stateful/secrets-manager/hashicorp-vault
-          #   exclude: true
 
   template:
     metadata:

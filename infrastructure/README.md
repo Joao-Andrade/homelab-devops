@@ -34,3 +34,5 @@ I use helm-charts to deploy any application on the cluster. Inside each applicat
 
 - [GitLab](./helm-charts/source-control/gitlab/README.md)
 - [Gitea](./helm-charts/source-control/gitea/README.md)
+- [ArgoCD](./helm-charts/continuous-deployment/argocd/README.md)
+- [OpenBao](./helm-charts/argo-deploys/stateful/secrets-manager/openbao/README.md)

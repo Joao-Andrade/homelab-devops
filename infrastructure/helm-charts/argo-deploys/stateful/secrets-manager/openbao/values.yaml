@@ -5,7 +5,7 @@ openbao:
     # No TLS/cert-manager for now
     tlsDisable: true
 
-  # Agent Injector (auto-injects Vault secrets into other pods' containers) -
+  # Agent Injector (auto-injects OpenBao secrets into other pods' containers) -
   # not needed yet. Enable later once an app needs it.
   injector:
     enabled: false

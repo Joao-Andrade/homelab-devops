@@ -30,7 +30,7 @@ http {
 
     server {
         listen 80;
-        server_name gitlab.internal gitea.internal argocd.internal vault.internal openbao.internal;
+        server_name gitlab.internal gitea.internal argocd.internal openbao.internal;
 
         location / {
             proxy_pass http://k3s_nodes;

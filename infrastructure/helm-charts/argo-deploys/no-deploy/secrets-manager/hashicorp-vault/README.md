@@ -8,16 +8,16 @@ All the toggles live in [`values.yaml`](./values.yaml).
 
 ## Via ArgoCD Application Set
 
-This chart is under the [`infrastructure/helm-charts/argo-deploys/stateless/`](../../) folder.
+This chart is under the [`infrastructure/helm-charts/argo-deploys/no-deploy/`](../../) folder, so ArgoCD does not deploy it (kept only as a reference).
 
-Assuming that there is a ArgoCD ApplicationSet, like it is described on my homelab documentation about [ArgoCD deploy and configuration](../../../../../../docs/6-Deploy_argocd.md#configure-argocd-application-sets), the ArgoCD Application Set `argo-deploy-stateless` will deploy this chart.
+Assuming that there is a ArgoCD ApplicationSet, like it is described on my homelab documentation about [ArgoCD deploy and configuration](../../../../../../docs/6-Deploy_argocd.md#configure-argocd-application-sets), it is not picked up by `argo-deploys-stateless` or `argo-deploys-stateful`. To deploy it, move the folder to `stateless/secrets-manager/` or `stateful/secrets-manager/`.
 
 ## Manually deploying the helm-chart
 
 Because this chart depends on the official one, fetch it before installing:
 
 ```bash
-# From inside infrastructure/helm-charts/argo-deploys/stateless/secrets-manager/hashicorp-vault
+# From inside infrastructure/helm-charts/argo-deploys/no-deploy/secrets-manager/hashicorp-vault
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm dependency update
 ```
@@ -25,7 +25,7 @@ helm dependency update
 To deploy the application:
 
 ```bash
-# From inside infrastructure/helm-charts/argo-deploys/stateless/secrets-manager/hashicorp-vault
+# From inside infrastructure/helm-charts/argo-deploys/no-deploy/secrets-manager/hashicorp-vault
 helm install vault . --kubeconfig ~/.kube/homelab_cluster01 --namespace hashicorp-vault --create-namespace
 ```
 
