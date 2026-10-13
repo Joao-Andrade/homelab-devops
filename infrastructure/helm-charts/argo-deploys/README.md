@@ -6,6 +6,7 @@ Charts are split into two top-level folders, each discovered by its own `Applica
 `ApplicationSet` manifests themselves live in [`infrastructure/argo-configs/`](../../argo-configs),
 not here - this folder only holds the charts):
 
+- [`no-deploy/`](./no-deploy) - this folder is used to store charts that are not meant to be deployed by ArgoCD. Could be a chart used to experiment, and not really to be deployed, but are there if they are needed in the future. If needed, just move to the stateful or stateless folder.
 - [`stateful/`](./stateful) — anything with real data worth protecting (Vault's secrets, a database, Gitea/GitLab repos, etc). Discovered by [`applicationset-stateful.yaml`](../../argo-configs/applicationset-stateful.yaml), which sets `preserveResourcesOnDeletion: true` - deleting a chart's folder removes the Application object from ArgoCD but leaves the deployed resources (and their data) alone, so an accidental git mistake can't cascade into a data wipe. Needs to be deleted by hand from cluster.
 - [`stateless/`](./stateless) — anything that can be wiped and redeployed from scratch with nothing lost. Discovered by [`applicationset-stateless.yaml`](../../argo-configs/applicationset-stateless.yaml), with no `preserveResourcesOnDeletion` - deleting the folder fully tears down whatever it deployed.
 

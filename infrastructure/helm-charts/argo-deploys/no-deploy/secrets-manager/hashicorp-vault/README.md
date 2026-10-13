@@ -29,36 +29,14 @@ To deploy the application:
 helm install vault . --kubeconfig ~/.kube/homelab_cluster01 --namespace hashicorp-vault --create-namespace
 ```
 
-
 ## Initializing and unsealing (automatic)
 
-Unlike the other charts, Vault normally does **not** come up ready to use after install - it
-starts **sealed** and needs to be initialized once, and re-unsealed on every restart. This chart
-automates both steps with a small sidecar container (`auto-unseal`, see
-`templates/auto-unseal-configmap.yaml`) running inside the same pod: on first boot it runs
-`vault operator init` itself and stores the unseal keys + root token in a Secret
-(`hashicorp-vault-unseal-keys`, scoped access via `templates/auto-unseal-rbac.yaml`); on every
-restart after that it reads that Secret and unseals automatically. No manual `vault operator
-init`/`unseal` needed in normal operation.
+Normally Vault starts sealed and requires the initialization and unsealing to be a manual process, but because I am deploying on a homelab, and it is not a production environment on a company, I decided to make the process aumtomatic and make it ready to use right after deployment.
 
-**This is a real security trade-off, not a free lunch** - the unseal keys and root token now live
-in a Kubernetes Secret in the same cluster Vault is meant to protect secrets for, which is a
-known step down from Vault's intended security model (designed around a human seeing the unseal
-keys exactly once and storing them elsewhere). Accepted here deliberately for homelab convenience;
-wouldn't recommend this pattern for anything protecting real production secrets.
+This chart automates the process with a small sidecar container (`auto-unseal`, see `templates/auto-unseal-configmap.yaml`) running inside the same pod. On first boot it runs `vault operator init` itself and stores the unseal keys + root token in a Secret (`hashicorp-vault-unseal-keys`, scoped access via `templates/auto-unseal-rbac.yaml`). If it restarts, it reads that Secret and unseals automatically.
 
-If you ever need to check on or manually intervene in the unseal state:
-
-```bash
-kubectl logs -n hashicorp-vault hashicorp-vault-0 -c auto-unseal --kubeconfig ~/.kube/homelab_cluster01
-kubectl get secret hashicorp-vault-unseal-keys -n hashicorp-vault --kubeconfig ~/.kube/homelab_cluster01
-```
-
-The script deliberately refuses to auto-re-initialize if Vault reports uninitialized while the
-keys Secret still exists (that combination usually means the data volume was lost/recreated while
-the old Secret survived) - it'll just log an error and retry on a loop until you resolve it by
-hand, rather than silently generating a new root of trust next to an orphaned old one.
-
+**Security trade-off** - the unseal keys and root token now live
+in a Kubernetes Secret in the same cluster Vault is meant to protect secrets for, which is the thing that Vault does not want. If someone uses this, I recommend to store the secret elsewhere and delete the secret.
 
 # Cleaning up
 

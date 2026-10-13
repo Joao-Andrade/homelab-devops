@@ -1,8 +1,8 @@
-# Scoped as tightly as Kubernetes RBAC allows: get/update are restricted to the
-# one named secret this script uses. "create" can't be restricted by name
-# (the object doesn't exist yet when the request is authorized), so it's
-# scoped to the resource type within this namespace only - still contained to
-# just the hashicorp-vault namespace, not cluster-wide.
+# Get/update are restricted to the one named secret this script uses.
+# "create" can't be restricted by name (the object doesn't exist yet
+# when the request is authorized), so it's scoped to the resource type
+# within this namespace only - still contained to just
+# the hashicorp-vault namespace, not cluster-wide.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

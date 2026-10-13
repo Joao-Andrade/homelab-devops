@@ -373,7 +373,7 @@ Here's the full list of articles of this series:
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
  - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
  - [6 - Deploy ArgoCD](./6-Deploy_argocd.md)
- - [7 - Secrets: Vault vs OpenBao](./7-Secrets_vault_vs_openbao.md)
+ - [7 - Secrets: Deploy OpenBao](./7-Secrets_openbao.md)
  - [8 - Registry: Harbor vs git registries](./8-Registry_harbor_vs_git_registries.md)
  - [9 - CI tools: Jenkins vs git runners](./9-CI_tools_jenkins_vs_git_runners.md)
  - [10 - Git server, registry and CI tool: the decision](./10-Git_registry_ci_tool_the_decision.md)

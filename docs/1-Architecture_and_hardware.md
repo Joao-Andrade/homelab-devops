@@ -105,10 +105,8 @@ I used Proxmox. The main reasons are it is free and open-source, it is widely re
    - Same reason as Gitlab, if I use Gitea, why not use the registry as well
 
 ### Secrets (To have the secrets available to the cluster and possibly other applications):
- - Hashicorp Vault
-   - Very complete package, it is used by a lot of companies, but some features are hidden behind an enterprise license. Since I just want to store credentials and don't need all the features, like the namespaces, it should be fine.
  - OpenBao
-   - It is a fork of Hashicorp Vault. It doesn't have all the features of Vault yet, although there is a roadmap where they plan on implement some missing features.
+   - It is a fork of Hashicorp Vault. It doesn't have all the features of Vault yet, although there is a roadmap where they plan on implement some missing features. I just want to store and access secrets from different applications, so it is more than enough
 
 ### CI (Continuous integration, so when a new commit is done on the repos, the workflow runs):
  - Jenkins
@@ -159,7 +157,7 @@ Here's the full list of articles of this series:
  - [4 - Create and configure VMs](./4-Create_and_conf_VMs.md)
  - [5 - Git: Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md)
  - [6 - Deploy ArgoCD](./6-Deploy_argocd.md)
- - [7 - Secrets: Vault vs OpenBao](./7-Secrets_vault_vs_openbao.md)
+ - [7 - Secrets: Deploy OpenBao](./7-Secrets_openbao.md)
  - [8 - Registry: Harbor vs git registries](./8-Registry_harbor_vs_git_registries.md)
  - [9 - CI tools: Jenkins vs git runners](./9-CI_tools_jenkins_vs_git_runners.md)
  - [10 - Git server, registry and CI tool: the decision](./10-Git_registry_ci_tool_the_decision.md)

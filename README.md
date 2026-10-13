@@ -11,7 +11,7 @@ Follow-along write-ups for each stage of the build live in [`docs/`](./docs):
  - [4 - Create and configure VMs](./docs/4-Create_and_conf_VMs.md)
  - [5 - Git: Gitlab vs Gitea](./docs/5-Git_gitlab_vs_gitea.md)
  - [6 - Deploy ArgoCD](./docs/6-Deploy_argocd.md)
- - [7 - Secrets: Vault vs OpenBao](./docs/7-Secrets_vault_vs_openbao.md) (WIP)
+ - [7 - Secrets: Deploy OpenBao](./docs/7-Secrets_openbao.md)
  - [8 - Registry: Harbor vs git registries](./docs/8-Registry_harbor_vs_git_registries.md) (WIP)
  - [9 - CI tools: Jenkins vs git runners](./docs/9-CI_tools_jenkins_vs_git_runners.md) (WIP)
  - [10 - Git server, registry and CI tool: the decision](./docs/10-Git_registry_ci_tool_the_decision.md) (WIP)

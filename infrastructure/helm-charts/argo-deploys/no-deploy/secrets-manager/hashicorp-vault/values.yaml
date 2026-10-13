@@ -51,7 +51,7 @@ vault:
 
     # Auto-unseal sidecar
     # NOTE: "hashicorp-vault" here is hardcoded to match the Helm release name
-    #If this chart's folder and the release name is renamed, update this too, or
+    # If this chart's folder and the release name is renamed, update this too, or
     # the ConfigMap volume mount will fail to find a match and the pod won't start.
     volumes:
       - name: auto-unseal-script
