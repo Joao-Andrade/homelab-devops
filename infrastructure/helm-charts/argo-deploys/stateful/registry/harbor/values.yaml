@@ -1,0 +1,241 @@
+# Values for the harbor chart. Everything is nested under "harbor:" because
+# the official chart is a dependency of this wrapper chart.
+#
+# IMPORTANT: no passwords, keys or tokens are stored in this file or in git.
+# Harbor's chart generates random secrets on every render, which ArgoCD sees as
+# a permanent diff (and with selfHeal that means constant restarts). To avoid
+# that, all secrets are read from Kubernetes Secrets, which are created once,
+# with random values, by the secrets-init init container of the Valkey pod
+# (see redis.internal.initContainers below, RBAC in templates/secrets-init-rbac.yaml).
+# Existing secrets are never changed.
+
+# OPTIONAL: fixed values for the secrets instead of random ones. Leave empty
+# (recommended) and the secrets-init container generates random values.
+# WARNING: anything filled in here is stored in git. Prefer creating the
+# Secret by hand instead, it is read the same way and stays out of git:
+#   kubectl create secret generic harbor-secrets-init-overrides -n harbor \
+#     --from-literal=ADMIN_PASSWORD=<password> --kubeconfig ~/.kube/homelab_cluster01
+# Supported keys: ADMIN_PASSWORD, SECRET_KEY (16 chars), CORE_SECRET (16),
+# XSRF_KEY (32), JOBSERVICE_SECRET (16), REGISTRY_SECRET (16), REGISTRY_PASSWORD.
+# Only applies when the secrets do not exist yet (existing ones are never changed).
+secretsInit:
+  adminPassword: ""
+  secretKey: ""
+  coreSecret: ""
+  xsrfKey: ""
+  jobserviceSecret: ""
+  registrySecret: ""
+  registryPassword: ""
+
+harbor:
+  # Served by the Traefik ingress, behind the reverse proxy LXC. No TLS for now.
+  expose:
+    type: ingress
+    tls:
+      enabled: false
+    ingress:
+      hosts:
+        core: harbor.internal
+      className: "traefik"
+      annotations:
+        # The chart default forces https redirects, remove them (null deletes the key)
+        ingress.kubernetes.io/ssl-redirect: null
+        nginx.ingress.kubernetes.io/ssl-redirect: null
+
+  # Must match how clients reach Harbor (through the reverse proxy on port 80)
+  externalURL: http://harbor.internal
+
+  # Nothing is meant to be kept on this deployment: PVCs are removed together
+  # with the release. Redis and database PVCs are never removed automatically
+  # by the chart, check the README cleanup section.
+  persistence:
+    enabled: true
+    resourcePolicy: ""
+    persistentVolumeClaim:
+      registry:
+        size: 10Gi
+      jobservice:
+        jobLog:
+          size: 1Gi
+      database:
+        size: 1Gi
+      redis:
+        size: 1Gi
+      trivy:
+        size: 2Gi
+
+  # Secrets created by the secrets-init init container
+  existingSecretAdminPassword: harbor-admin-password   # key HARBOR_ADMIN_PASSWORD
+  existingSecretSecretKey: harbor-secret-key           # key secretKey
+
+  core:
+    existingSecret: harbor-core-secret                  # key secret
+    existingXsrfSecret: harbor-core-xsrf                # key CSRF_KEY
+    secretName: harbor-core-token                       # keys tls.crt / tls.key
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  jobservice:
+    existingSecret: harbor-jobservice-secret            # key JOBSERVICE_SECRET
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 256Mi
+
+  registry:
+    existingSecret: harbor-registry-secret              # key REGISTRY_HTTP_SECRET
+    credentials:
+      existingSecret: harbor-registry-credentials       # keys REGISTRY_PASSWD / REGISTRY_HTPASSWD
+    registry:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    controller:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
+
+  portal:
+    resources:
+      requests:
+        cpu: 20m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+
+  # Vulnerability scanner. Downloads its database from the internet
+  # (mirror.gcr.io / ghcr.io) unless skipUpdate is set, check the doc.
+  trivy:
+    enabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+  # Internal database and Redis (Valkey since Harbor 2.15.2, same `redis:` key) use the chart defaults (no password is set here,
+  # they are only reachable inside the namespace).
+  database:
+    type: internal
+    internal:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+  redis:
+    type: internal
+    internal:
+      # The Valkey pod does not read any of the secrets, so its init container
+      # can create them (the other pods wait until they exist).
+      # NOTE: "harbor" in the ServiceAccount name is hardcoded to match the Helm
+      # release name (= the folder name). Update it if the folder is renamed.
+      serviceAccountName: harbor-secrets-init
+      automountServiceAccountToken: true
+      initContainers:
+        - name: secrets-init
+          image: alpine/k8s:1.33.10
+          command: ["/bin/sh", "-c"]
+          # The Valkey pod runs as a non-root user, but apk (used below to install
+          # openssl/htpasswd if the image does not have them) needs root.
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+          # Optional fixed values (see secretsInit at the top of this file)
+          envFrom:
+            - secretRef:
+                name: harbor-secrets-init-overrides
+                optional: true
+          args:
+            - |
+              set -e
+              NAMESPACE="$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)"
+              REGISTRY_USER="harbor_registry_user"   # chart default, must match registry.credentials.username
+
+              # Random alphanumeric string of the given length
+              rand() { tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1"; }
+
+              # Creates the secret only if it does not exist yet, so existing
+              # secrets are never rotated. Arguments: name, then create args
+              create_once() {
+                name="$1"; shift
+                if kubectl get secret "$name" -n "$NAMESPACE" >/dev/null 2>&1; then
+                  echo "  - $name already exists, skipping"
+                else
+                  kubectl create secret generic "$name" -n "$NAMESPACE" "$@" >/dev/null
+                  echo "  - $name created"
+                fi
+              }
+
+              # openssl and htpasswd may not be in the image. If they are
+              # missing they are installed (needs internet, first time only).
+              if ! command -v openssl >/dev/null 2>&1 || ! command -v htpasswd >/dev/null 2>&1; then
+                echo "Installing openssl and htpasswd (needs internet access)..."
+                apk add --no-cache openssl apache2-utils || { echo "ERROR: could not install openssl/htpasswd"; exit 1; }
+              fi
+
+              create_once harbor-admin-password --from-literal=HARBOR_ADMIN_PASSWORD="${ADMIN_PASSWORD:-$(rand 20)}"
+              create_once harbor-secret-key --from-literal=secretKey="${SECRET_KEY:-$(rand 16)}"
+              create_once harbor-core-secret --from-literal=secret="${CORE_SECRET:-$(rand 16)}"
+              create_once harbor-core-xsrf --from-literal=CSRF_KEY="${XSRF_KEY:-$(rand 32)}"
+              create_once harbor-jobservice-secret --from-literal=JOBSERVICE_SECRET="${JOBSERVICE_SECRET:-$(rand 16)}"
+              create_once harbor-registry-secret --from-literal=REGISTRY_HTTP_SECRET="${REGISTRY_SECRET:-$(rand 16)}"
+
+              if ! kubectl get secret harbor-registry-credentials -n "$NAMESPACE" >/dev/null 2>&1; then
+                REG_PASSWD="${REGISTRY_PASSWORD:-$(rand 24)}"
+                HTPASSWD="$(htpasswd -nbB "$REGISTRY_USER" "$REG_PASSWD")"
+                create_once harbor-registry-credentials \
+                  --from-literal=REGISTRY_PASSWD="$REG_PASSWD" \
+                  --from-literal=REGISTRY_HTPASSWD="$HTPASSWD"
+              fi
+
+              if ! kubectl get secret harbor-core-token -n "$NAMESPACE" >/dev/null 2>&1; then
+                TMP="$(mktemp -d)"
+                # Harbor core only reads the traditional RSA key format
+                # ("BEGIN RSA PRIVATE KEY"). OpenSSL 3 writes PKCS#8 by default,
+                # which fails with "unable to get PrivateKey from PEM type".
+                openssl genrsa -traditional -out "$TMP/tls.key" 4096 >/dev/null 2>&1 \
+                  || openssl genrsa -out "$TMP/tls.key" 4096 >/dev/null 2>&1
+                openssl req -x509 -new -key "$TMP/tls.key" -days 3650 -subj "/CN=harbor-token-service" \
+                  -out "$TMP/tls.crt" >/dev/null 2>&1
+                head -1 "$TMP/tls.key"
+                create_once harbor-core-token --from-file=tls.key="$TMP/tls.key" --from-file=tls.crt="$TMP/tls.crt"
+                rm -rf "$TMP"
+              fi
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi

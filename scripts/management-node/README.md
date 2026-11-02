@@ -12,3 +12,5 @@ Scripts:
    - A subfolder that contains scripts to test the installation of some applications.
    - source-control/
      - Contains a script to test source control application (GitLab or Gitea). Creates ten repos, pulls them and push changes to each repo, including some big files. At the end cleans the repos from git server.
+   - registry/
+     - Contains a script to test an image registry (Gitea, GitLab or Harbor). `registry-tests-push.sh` pushes and `registry-tests-pull.sh` pulls a small and a big docker image on each registry, and both print the time of each step. They need docker, and a `docker login` on each registry beforehand.

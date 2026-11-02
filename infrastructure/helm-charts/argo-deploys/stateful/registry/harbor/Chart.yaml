@@ -1,0 +1,12 @@
+apiVersion: v2
+name: harbor
+description: >-
+  I used the official Harbor helm chart as a base, and customized the values
+  file. As of now, no TLS, internal database, Valkey (Redis replacement) and Trivy scanner enabled.
+type: application
+version: 0.1.0
+appVersion: "2.15.2" # Check https://github.com/goharbor/harbor-helm/releases
+dependencies:
+  - name: harbor
+    version: "1.19.2"
+    repository: "https://helm.goharbor.io"

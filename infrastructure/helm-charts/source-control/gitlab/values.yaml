@@ -103,7 +103,7 @@ gitlab:
 
   # Container registry
   registry:
-    enabled: false
+    enabled: true
 
   # ---------------------------------------------------------------------------
   # Mandatory data services.
