@@ -1,0 +1,68 @@
+# Values for the jenkins chart. Everything is nested under "jenkins:" because
+# the official chart is a dependency of this wrapper chart.
+#
+# The admin user and password are defined in this file (controller.admin) and
+# the chart creates the Secret itself. A fixed password is needed because
+# without one the chart generates a random password on every render, which
+# ArgoCD sees as a permanent diff.
+#
+# WARNING: this means the password is stored in git. Replace the placeholder
+# below with the real password only on your own copy, and don't commit a real
+# password to a shared repository.
+
+jenkins:
+  controller:
+    # How clients reach Jenkins (through the reverse proxy on port 80)
+    jenkinsUrl: http://jenkins.internal/
+
+    # The controller only orchestrates, builds run on Kubernetes agents
+    # (one pod per build, created on demand)
+    numExecutors: 0
+
+    admin:
+      createSecret: true
+      username: "admin"
+      # REPLACE the placeholder before deploying
+      password: "<set-a-password>"
+      # To use a Secret created by hand instead:
+      #   createSecret: false
+      #   existingSecret: jenkins-admin
+      #   userKey: jenkins-admin-user
+      #   passwordKey: jenkins-admin-password
+
+    serviceType: ClusterIP
+
+    # Served by the Traefik ingress. No TLS for now.
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      hostName: jenkins.internal
+
+    # Plugins (kubernetes, git, workflow, configuration-as-code, ...) use the
+    # chart defaults and are downloaded when the pod starts, so it needs internet
+    # access. To add more, copy the full default list first, "installPlugins"
+    # replaces the default list instead of adding to it.
+
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1536Mi
+
+  # Jenkins home (jobs, build history, configuration, plugins)
+  persistence:
+    enabled: true
+    size: 8Gi
+
+  # Kubernetes build agents (inbound-agent pods)
+  agent:
+    enabled: true
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi

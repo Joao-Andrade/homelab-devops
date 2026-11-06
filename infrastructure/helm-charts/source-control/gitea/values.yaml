@@ -33,6 +33,10 @@ gitea:
       server:
         DOMAIN: gitea.internal
         ROOT_URL: "http://gitea.internal/"
+      # Gitea Actions (CI). The runner is deployed separately, see
+      # argo-deploys/stateless/ci/gitea-runner
+      actions:
+        ENABLED: true
 
   resources:
     requests:

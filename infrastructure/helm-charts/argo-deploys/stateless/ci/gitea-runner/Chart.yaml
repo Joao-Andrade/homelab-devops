@@ -1,0 +1,13 @@
+apiVersion: v2
+name: gitea-runner
+description: >-
+  I used the official Gitea Actions helm chart (act_runner) as a base, and
+  customized the values file. One runner with a Docker-in-Docker sidecar,
+  registered on the Gitea deployed in this cluster with a token from an existing Secret.
+type: application
+version: 0.1.0
+appVersion: "3.0.2" # Actual act_runner version used by the official chart
+dependencies:
+  - name: actions
+    version: "0.1.3" # Official helm version
+    repository: "https://dl.gitea.com/charts/"

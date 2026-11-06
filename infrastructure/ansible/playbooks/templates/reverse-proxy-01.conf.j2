@@ -60,7 +60,7 @@ http {
     # GitLab would need gitlab.internal to move to the block above.
     server {
         listen 80;
-        server_name gitlab.internal argocd.internal openbao.internal;
+        server_name gitlab.internal argocd.internal openbao.internal jenkins.internal;
 
         location / {
             proxy_pass http://k3s_nodes;

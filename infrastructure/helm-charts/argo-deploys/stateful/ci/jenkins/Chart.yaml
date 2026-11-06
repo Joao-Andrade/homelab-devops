@@ -1,0 +1,14 @@
+apiVersion: v2
+name: jenkins
+description: >-
+  I used the official Jenkins helm chart as a base, and customized the values
+  file. Controller with no executors (builds run on Kubernetes agents), admin
+  credentials from an existing Secret or from variables on values file, no TLS,
+  exposed through the Traefik ingress.
+type: application
+version: 0.1.0
+appVersion: "2.568.3" # Actual Jenkins version
+dependencies:
+  - name: jenkins
+    version: "5.9.63" # Official helm version
+    repository: "https://charts.jenkins.io"

@@ -1,82 +1,137 @@
 # Introduction
 
-## Why an image registry
+Now that I have git servers, a secrets manager and an image registry, I can start working on the CI part of my pipeline. In this article I will deploy three CI options and compare them to decide which one suits best my homelab: Jenkins, GitLab Runner (which executes the GitLab CI pipelines) and the Gitea Actions runner (which executes the Gitea Actions workflows).
+
+A CI (Continuous Integration) tool is a very important part of a CI/CD pipeline. Every time someone pushes a change to a repository, it is responsible for at least checking out the code, building it, testing it, creating the container image and pushing it to the registry. Check the first article [1-Architecture_and_hardware (CI options)](./1-Architecture_and_hardware.md#ci-continuous-integration-so-when-a-new-commit-is-done-on-the-repos-the-workflow-runs) for the reasons of each choice, but here is the overview:
+
+ - Jenkins
+   - Industry standard, has a lot of plugins and it is very good for CI/CD.
+   - Independent of the git server
+ - Gitlab CI and GitLab Runner
+   - Already part of GitLab, so it integrates well with Gitlab, both the repository and the registry
+   - Uses Gitlab Runners to run the jobs
+ - Gitea Actions and the Gitea runner
+   - Same reason as GitLab, since it already has a registry and a git server, why not use the CI tool as well
+   - Workflow and sintax is very similar to Github Actions, so it should be easy to move from Github repos to Gitea repos.
 
 ## What I will compare in this article
 
-# Preparing Reverse Proxy LXC so both secret managers are accessible
+To compare the three CI tools, I will compare the following:
 
-## What I will compare in this article
+ - Resource consumption (CPU and memory) when idle
+ - How simple it is to write the pipeline for the same simple example
+ - How jobs are executed. How many pods does each one create to run the job?
+ - Integration with Gitlab, Gitea, and Harbor
+ - Create a simple CI pipeline that, from a repository on both Gitea and Gitlab, checkos out the code, builds an image and pushes to the registry, while fetching the credentials from OpenBao 
 
-# Preparing Reverse Proxy LXC so both secret managers are accessible
+Whichever CI tool I choose, it will be part of my complete CI/CD pipeline that I will create in the [12 - CI/CD](./12-CICD.md) article.
 
-# Deploying secret managers on my Homelab
+# Pre-requisites
 
-## Creating Hashicorp Vault helm chart
+There are a few actions needed before deploying the CI tools:
 
-## Deploying Hashicorp Vault on the kubernetes cluster
+ - Preparing the Reverse Proxy LXC (only Jenkins needs it, as the runners have no web UI)
+ - Preparing the hosts file
+ - Creating the secrets for **TODO** Jenkins And maybe for gitea and gitlab Runners
 
-## Accessing Hashicorp Vault
+## Preparing Reverse Proxy LXC so Jenkins is accessible
 
-## Creating OpenBao helm Chart
+Like on the previous articles, I need to update the reverse proxy configuration to access the Jenkins web UI. The config is on [infrastructure/ansible/playbooks/update-reverse-proxy-config.yaml of my homelab](https://github.com/Joao-Andrade/homelab-devops/blob/v9/infrastructure/ansible/playbooks/update-reverse-proxy-config.yaml) and the new url will be:
 
-## Deploying OpenBao on the kubernetes cluster
+ - http://jenkins.internal
 
-## Accessing OpenBao
-
-# Comparing Hashicorp Vault and OpenBao
-
-## Resource consumption when idle
-
-### Cluster consumption baseline
-
-In order to properly evaluate how much RAM and CPU each secret manager uses, I need to have a baseline. For that, on the management node, I ran the command `kubectl --kubeconfig ~/.kube/homelab_cluster01 top nodes`. This shows me the resource usage of each node on the cluster. I could check each pod consumption as well, but because any pod can be on any node, I just need to have an overall view of the cluster:
+To apply the change to the reverse proxy, I excuted the following command from the `management-node`, with the repository cloned:
 
 ```bash
-# kubectl --kubeconfig ~/.kube/homelab_cluster01 top nodes
-NAME       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)
-k3s-cp01   52m          2%       1813Mi          46%
-k3s-wk01   14m          0%       817Mi           10%
-k3s-wk02   11m          0%       803Mi           10%
+# cd into infrastructure/ansible/playbooks
+ansible-playbook update-reverse-proxy-config.yaml
 ```
 
-### Hashicorp Vault when Idle
+## Preparing the hosts file
 
-After deploying hashicorp vault, I checked the resource usage after one hour:
+The computer that will access Jenkins needs the new hostname in its `/etc/hosts` file, if on a Mac or Linux machine. For windows it may be a dfferent method. Appended it to the line that already points to the reverse proxy IP:
 
 ```bash
-# kc01 top nodes
-NAME       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)
-k3s-cp01   58m          2%       1985Mi          50%
-k3s-wk01   51m          1%       2426Mi          30%
-k3s-wk02   109m         2%       2105Mi          26%
+192.168.1.81 jenkins.internal
 ```
 
-As it is possible to see, the cluster consumption increased from 77m CPU and 3433Mi RAM to 218m CPU and 6516Mi RAM, which is about **183%** increase on CPU usage and about **90%** increase on RAM usage.
+## Creating the secrets for Jenkins
 
-### OpenBao when Idle
-
-After deploying OpenBao, I checked the resource usage after one hour:
+In order to access Jenkins, it is necessary to have some admin account. This can be achieved on two ways. The simple one, that I do not recommend, is setting it on the values file of the Chart, [Jenkins helm chart folder on my repository](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateful/ci/jenkins). The values on the values file are:
 
 ```bash
-# kc01 top nodes
-NAME       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)
-k3s-cp01   50m          2%       1815Mi          46%
-k3s-wk01   20m          0%       937Mi           11%
-k3s-wk02   15m          0%       802Mi           10%
+jenkins:
+  controller:
+    admin:
+      createSecret: true
+      username: "admin"
+      # REPLACE the placeholder before deploying
+      password: "<set-a-password>"
 ```
 
-As it is possible to see, the cluster consumption increased from 77m CPU and 3433Mi RAM to 85m CPU and 3554Mi RAM, which is about **10%** increase on CPU usage and about **3.5%** increase on RAM usage.
+The other option, is to create manually a Kubernetes secret on the cluster, that will contain the credentials. That way, the creentials are not stored on git, even by mistake.
 
-## Conclusion
+To create the secret, on the management node:
 
-# Cleaning up Hashicorp Vault or OpenBao installations
+```bash
+kubectl create namespace jenkins --kubeconfig ~/.kube/homelab_cluster01
+# REPLACE the placeholder before deploying
+kubectl create secret generic jenkins-admin -n jenkins --kubeconfig ~/.kube/homelab_cluster01 \
+  --from-literal=jenkins-admin-user=admin \
+  --from-literal=jenkins-admin-password=<password>
+```
 
-In this section I will explain how to uninstall Hashicorp Vault or OpenBao from the cluster.
+On the values file of the [Jenkins helm chart](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateful/ci/jenkins/values.yaml), the following need to be set:
+
+```bash
+jenkins:
+  controller:
+    admin:
+      createSecret: false
+      existingSecret: jenkins-admin
+      userKey: jenkins-admin-user
+      passwordKey: jenkins-admin-password
+```
+
+Then when Jenkins is deployed, it will read from that secret.
+
+# Deploying the CI tools on my Homelab
+
+Like for the previous articles and deployments, I will use ArgoCD to deploy the CI tools, so I just need to copy each folder with the helm chart to the repository that ArgoCD is watching. All the charts are in my [homelab repository](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys), under a `ci` category folder, and each one is a wrapper chart around the official one, with a `Chart.yaml` that references it and a `values.yaml` with the values I override.
+
+Jenkins is deployed as a stateful application, because everything that matters is stored in the Jenkins home (jobs, build history, configuration), so I it persistant and  avoid any mistake on git to delete it. The two runners, for Gitea CI and Gitlab CI, are stateless because they do not need to have anything persistant.
+
+## Jenkins
+
+### Creating the Jenkins helm chart
+
+The Jenkins project has an [official helm chart](https://github.com/jenkinsci/helm-charts). My chart on my [homelab repository](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateful/ci/jenkins) is based on that and then I override some values. As is, my Helm chart deploys Jenkins without any executors (builds run on Kubernetes agents), the admin credentials can be either from an existing Secret or from variables on values file, it has no TLS, and `http://jenkins.internal` is exposed through the Traefik ingress.
+
+### Deploying Jenkins on the kubernetes cluster
+
+First, I created the namespace and the admin Secret. Check the [Creating the secrets for Jenkins](#creating-the-secrets-for-jenkins) section.
+
+Then copied the [Jenkins folder with the helm chart](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateful/ci/jenkins) to the repository that ArgoCD is watching. For my homelab, as it is stateful, I copied it to Gitlab's repository, to `infrastructure/helm-charts/argo-deploys/stateful/ci/jenkins`. ArgoCD will notice the folder and deploy it on the cluster.
+
+Once deployed, confirm the pods are running on the cluster. Jenkins downloads its plugins when it starts, so the first start can take a few minutes:
+
+```bash
+kubectl --kubeconfig ~/.kube/homelab_cluster01 get pods -n jenkins
+```
+
+### Accessing Jenkins
+
+On the browser, accessed Jenkins thorugh the URL `http://jenkins.internal`. To login I used the credentials created by the secret mentioned on the previous section.
+
+![Jenkins login](./images/9-ci-1.png).
+
+
+
+
 
 # Next steps
 
-Now that I have a secrets manager, I can move to the next step, which is deploying an image registry so I can create and store Docker images. I will compare Harbor against the registries available on Gitea and Gitlab. Check the next article [8 - Registry: Harbor vs git registries](./8-Registry_harbor_vs_git_registries.md).
+Now that I tested the CI tools, I have all the components to decide which git server, registry and CI tool to use on my homelab. Check the next article [10 - Git server, registry and CI tool: the decision](./10-Git_registry_ci_tool_the_decision.md).
 
 # Articles
 

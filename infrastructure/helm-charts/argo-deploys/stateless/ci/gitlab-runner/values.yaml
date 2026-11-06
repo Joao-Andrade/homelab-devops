@@ -1,0 +1,48 @@
+# Values for the gitlab-runner chart. Everything is nested under "gitlab-runner:"
+# because the official chart is a dependency of this wrapper chart.
+#
+# IMPORTANT: no tokens are stored in this file or in git. The runner
+# authentication token is read from the Secret "gitlab-runner-token", which is
+# created by hand BEFORE this chart is deployed (check the README).
+
+gitlab-runner:
+  # GitLab inside the cluster (same service ArgoCD uses to clone the repositories)
+  gitlabUrl: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/
+
+  # Max number of jobs running at the same time. Each job is a pod, so keep it
+  # low for a small cluster.
+  concurrent: 2
+
+  rbac:
+    create: true
+
+  runners:
+    # Existing Secret with the keys "runner-token" (the glrt-... token created
+    # on GitLab) and "runner-registration-token" (empty string)
+    secret: gitlab-runner-token
+
+    config: |
+      [[runners]]
+        # Jobs clone the repository through the internal service. The job pods
+        # cannot resolve gitlab.internal, as it only exists on the reverse proxy.
+        clone_url = "http://gitlab-webservice-default.gitlab.svc.cluster.local:8181"
+        [runners.kubernetes]
+          namespace = "{{.Release.Namespace}}"
+          image = "alpine:3.20"
+          # Needed to build images with Docker-in-Docker. Disabled until it is
+          # needed, check the documentation.
+          privileged = false
+          # The job pods cannot resolve the *.internal names (they only exist in
+          # the /etc/hosts of my computer), so point them to a k3s node, where
+          # Traefik routes by hostname.
+          [[runners.kubernetes.host_aliases]]
+            ip = "192.168.1.100"
+            hostnames = ["harbor.internal", "gitea.internal", "registry.gitlab.internal"]
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

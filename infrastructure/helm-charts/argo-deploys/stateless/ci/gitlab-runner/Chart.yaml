@@ -1,0 +1,15 @@
+apiVersion: v2
+name: gitlab-runner
+description: >-
+  I used the official GitLab Runner helm chart as a base, and customized the
+  values file. Kubernetes executor, every CI job runs in its own pod, registered
+  on the GitLab deployed in this cluster with a token from an existing Secret.
+type: application
+version: 0.1.0
+appVersion: "18.11" # Actual gitlab runner version, same as GitLab
+dependencies:
+  - name: gitlab-runner
+    # TODO: confirm the exact version that matches the GitLab version with
+    # `helm repo add gitlab https://charts.gitlab.io && helm search repo gitlab/gitlab-runner --versions`
+    version: "0.88.0" # Official helm version
+    repository: "https://charts.gitlab.io"

@@ -1,0 +1,56 @@
+# Values for the gitea-runner chart. Everything is nested under "actions:"
+# because the official chart (called "actions") is a dependency of this
+# wrapper chart.
+#
+# IMPORTANT: no tokens are stored in this file or in git. The runner
+# registration token is read from the Secret "gitea-runner-token", which is
+# created by hand BEFORE this chart is deployed (check the README).
+#
+# Gitea itself needs Actions enabled (gitea.config.actions.ENABLED in
+# helm-charts/source-control/gitea/values.yaml).
+
+actions:
+  enabled: true
+
+  # Gitea inside the cluster
+  giteaRootURL: http://gitea-http.gitea.svc.cluster.local:3000
+
+  existingSecret: gitea-runner-token
+  existingSecretKey: runner-token
+
+  statefulset:
+    replicas: 1
+
+    # Runner state (registration file)
+    persistence:
+      size: 1Gi
+
+    # The job containers (started by the Docker-in-Docker sidecar) cannot
+    # resolve the *.internal names, so point them to a k3s node, where Traefik
+    # routes by hostname.
+    hostAliases:
+      - ip: 192.168.1.100
+        hostnames:
+          - harbor.internal
+          - gitea.internal
+          - registry.gitlab.internal
+
+    runner:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+
+    # Docker-in-Docker sidecar that runs the job containers. It runs privileged
+    # (set by the official chart), which is a security trade-off for a homelab.
+    dind:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
