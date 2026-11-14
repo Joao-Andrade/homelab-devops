@@ -61,6 +61,18 @@ helm dependency update
 helm install jenkins . --kubeconfig ~/.kube/homelab_cluster01 --namespace jenkins --create-namespace
 ```
 
+# Initial setup
+
+The setup is kept in [`values.yaml`](./values.yaml) (Configuration as Code), so it is in git instead of UI clicks. What each part does, and what is still manual:
+
+1. **Security.** The chart's defaults already disable anonymous access and sign-up, and legacy API tokens. `disableRememberMe` is also on. Nothing to do.
+2. **Kubernetes agents.** The `kubernetes` cloud is created by the chart. `agent.containerCap` limits it to 3 agent pods at once. Check it with the test job `kubernetes-agent-test` (Build Now): an agent pod is created, prints a line, and is removed.
+3. **Credentials.** A commented block creates the git and Harbor credentials from a Secret that you create once (steps in `values.yaml`). They never go into this file.
+4. **Git integration.** The `gitea`, `gitlab-plugin` and `job-dsl` plugins are installed. A commented multibranch job example is in `values.yaml`. The webhooks are added in Gitea/GitLab (pointing to `http://jenkins.internal/`).
+5. **Building images.** There is no Docker daemon in the agent pods. A commented Buildah pod template is in `values.yaml` and is **unverified**: it may need changes on this cluster.
+6. **Reproducible plugins.** The default plugins are pinned. The added ones are not: after the first start, pin them to the installed versions (Manage Jenkins > Plugins).
+7. **Data.** Configuration is in git through Configuration as Code, and jobs should be `Jenkinsfile`s in git. The Jenkins home volume is not backed up, so only build history is lost if it is.
+
 # Using it
 
 Login on `http://jenkins.internal` (the hostname needs to be on the reverse proxy configuration and on the `/etc/hosts` of the computer).

@@ -59,6 +59,10 @@ jenkins:
   # Kubernetes build agents (inbound-agent pods)
   agent:
     enabled: true
+    containerCap: 2
+    # Remove agent pods that were left behind
+    garbageCollection:
+      enabled: true
     resources:
       requests:
         cpu: 200m
