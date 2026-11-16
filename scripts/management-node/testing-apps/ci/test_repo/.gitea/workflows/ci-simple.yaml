@@ -1,0 +1,19 @@
+# Gitea Actions equivalent of the Jenkins pipeline: run "hostname" inside a container.
+# Gitea Actions uses the GitHub Actions syntax. The job runs in the Gitea runner's
+# Docker-in-Docker, so the output is the container id (not a pod name).
+
+name: main
+on: [push]
+
+jobs:
+  main:
+    # Label of the runner. Use one of the labels the Gitea runner has
+    # (Site Administration > Actions > Runners).
+    runs-on: ubuntu-latest
+    # Jenkins: container "shell" with image ubuntu, running as user 1000
+    container:
+      image: ubuntu
+      options: --user 1000
+    steps:
+      - name: Main
+        run: hostname

@@ -19,6 +19,9 @@ jenkins:
     # (one pod per build, created on demand)
     numExecutors: 0
 
+    additionalPlugins:
+      - hashicorp-vault-plugin
+
     admin:
       createSecret: true
       username: "admin"

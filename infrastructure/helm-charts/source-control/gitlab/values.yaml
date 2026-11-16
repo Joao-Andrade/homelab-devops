@@ -93,10 +93,44 @@ gitlab:
   nginx-ingress:
     enabled: false
 
-  # No in-cluster CI runner yet
+  # CI runner bundled with the GitLab chart
   gitlab-runner:
-    install: false
-    
+    install: true
+
+    # The runner pod can't resolve gitlab.internal (it only exists on the reverse
+    # proxy and in the /etc/hosts of my computer), which is the address the chart
+    # uses by default, so registering fails with "no such host". Use the internal
+    # service instead (the same one ArgoCD uses to clone the repositories).
+    gitlabUrl: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/
+
+    # Max number of jobs running at the same time.
+    # Each job is a pod, so for a homelab doesn't need much.
+    concurrent: 2
+
+    rbac:
+      create: true
+
+    runners:
+      config: |
+        [[runners]]
+          # Jobs clone the repository through the internal service.
+          clone_url = "http://gitlab-webservice-default.gitlab.svc.cluster.local:8181"
+          [runners.kubernetes]
+            namespace = "{{.Release.Namespace}}"
+            image = "alpine:3.20"
+            privileged = false
+            [[runners.kubernetes.host_aliases]]
+              ip = "192.168.1.100"
+              hostnames = ["gitlab.internal", "harbor.internal", "openbao.internal", "registry.gitlab.internal"]
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
   # Monitoring stack
   prometheus:
     install: false

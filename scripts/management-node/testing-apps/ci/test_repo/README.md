@@ -58,3 +58,15 @@ The image has `EXPOSE 8080`, but that is only documentation. The server uses `PO
 ## Why the image runs as a non-root user
 
 The `Dockerfile` creates an unprivileged user (`app`, uid 10001) and runs the server as that user. If the app is compromised, the attacker doesn't get root inside the container, and clusters that enforce `runAsNonRoot` accept the image. The server uses a port above 1024, so it needs no root rights.
+
+## CI pipelines
+
+The same pipeline (run `hostname` inside an `ubuntu` container as user 1000) for each CI tool:
+
+| CI tool | File |
+|---|---|
+| Jenkins | `Jenkinsfile` (declarative pipeline with a Kubernetes agent) |
+| GitLab CI | `.gitlab-ci.yml` |
+| Gitea Actions | `.gitea/workflows/ci.yaml` |
+
+Jenkins' `retries 2` is the `retry: 2` of the GitLab job. Gitea Actions has no job retry. The GitLab output is the pod name (Kubernetes executor), and the Gitea output is the container id (Docker-in-Docker).

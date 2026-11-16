@@ -32,7 +32,11 @@ There are a few actions needed before deploying the CI tools:
 
  - Preparing the Reverse Proxy LXC (only Jenkins needs it, as the runners have no web UI)
  - Preparing the hosts file
- - Creating the secrets for **TODO** Jenkins And maybe for gitea and gitlab Runners
+ - Creating the admin secret for Jenkins
+ - Creating Gitea and Gitlab tokens for Jenkins
+ - Creating OpenBao approles for each CI tool
+ - Creating Harbor robot accounts for each CI tool
+ - Preparing a simple repository on Gitlab and Gitea for CI
 
 ## Preparing Reverse Proxy LXC so Jenkins is accessible
 
@@ -55,9 +59,7 @@ The computer that will access Jenkins needs the new hostname in its `/etc/hosts`
 192.168.1.81 jenkins.internal
 ```
 
-## Creating the secrets for Jenkins
-
-### Admin account secret
+## Creating the admin secret for Jenkins
 
 In order to access Jenkins, it is necessary to have some admin account. This can be achieved on two ways. The simple one, that I do not recommend, is setting it on the values file of the Chart, [Jenkins helm chart folder on my repository](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateful/ci/jenkins). The values on the values file are:
 
@@ -97,6 +99,19 @@ jenkins:
 
 Then when Jenkins is deployed, it will read from that secret.
 
+## Gitea and Gitlab tokens for Jenkins
+
+In order for Jenkins to connect to Gitea's and Gitlab's repositories and registries, it needs to have the necessary credentials and permissions to access them. So, I need to create tokens for each one.
+
+To create access tokens on both Gitlab and Gitea, I followed the same approach I did on a previous article about deploying both git servers and [created an access token for each](./5-git_gitlab_vs_gitea.md#getting-gitlab-and-gitea-access-tokens).
+
+I created the following Access tokens:
+
+| Git server | Access token name | Permissions |
+| --- | --- | --- |
+| Gitea | jenkins-token | Repository -> read and write, Packages -> read and write |
+| Gitlab | jenkins-token | Read_repository, write_repository, read_registry, write_registry, api, read_api |
+
 ## OpenBao approles for each CI tool
 
 Because each CI tool needs to access external services on the cluster, for example, to the registry, it is necessary to have credentials. Instead of having those credentials hardcoded in the pipeline or in the CI tool configuration, I will use OpenBao to store the credentials. That way, the secrets and credentials are centralized and everything that needs a credential can just fetch from there and if a credential changes, I just need to update on Openbao instead of on all the necessary tools or pipelines.
@@ -135,7 +150,21 @@ bao read auth/approle/role/gitlab-ci-role/role-id
 bao write -f auth/approle/role/gitlab-ci-role/secret-id
 ```
 
-## Preparing a simple repository for CI
+## Harbor robot accounts for each CI tool
+
+In order for each CI tool to access HArbor to either pull or push images, it is necessary to create three Harbor robot accounts, one for Gitlab Runner, one for Gitea Runner and one for Jenkins. To do that, I followed the steps I wrote on the previous article about the registries on how to [create a Harbor robot account](./8-Registry_harbor_vs_git_registries.md#creating-a-robot-account).
+
+I created the robot accounts:
+ - robot$homelab-registry+gitlab-runner
+ - robot$homelab-registry+gitea-runner
+ - robot$homelab-registry+jenkins
+
+Each of them has the permissions:
+ - Artifact -> List and read
+ - Repository -> List, push, pull and read
+ - Tag -> Create and list
+
+## Preparing a simple repository on Gitlab and Gitea for CI
 
 In order to actually experiment and check which CI tool is better for my homelab, I will create a repository with some python code. The objective is that the CI tool will connect to the repository and whenever there is a change on the repository, it will build the image and push it to the registries.
 
@@ -155,15 +184,15 @@ Gitlab new project page:
 
 # Deploying the CI tools on my Homelab
 
-Like for the previous articles and deployments, I will use ArgoCD to deploy the CI tools, so I just need to copy each folder with the helm chart to the repository that ArgoCD is watching. All the charts are in my [homelab repository](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys), under a `ci` category folder, and each one is a wrapper chart around the official one, with a `Chart.yaml` that references it and a `values.yaml` with the values I override.
+Like for the previous articles and deployments, I will use ArgoCD to deploy the CI tools, so I just need to copy each folder with the helm chart to the repository that ArgoCD is watching. All the charts, except for Gitlab runner, are in my [homelab repository](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys), under a `ci` category folder, and each one is a wrapper chart around the official one, with a `Chart.yaml` that references it and a `values.yaml` with the values I override.
 
-Jenkins is deployed as a stateful application, because everything that matters is stored in the Jenkins home (jobs, build history, configuration), so I it persistant and  avoid any mistake on git to delete it. The two runners, for Gitea CI and Gitlab CI, are stateless because they do not need to have anything persistant.
+Jenkins is deployed as a stateful application (`infrastructure/helm-charts/argo-deploys/stateful/ci/jenkins`), because everything that matters is stored in the Jenkins home (jobs, build history, configuration), so it is persistent to avoid any mistake on git to delete it. Gitea Runner is a stateless application (`infrastructure/helm-charts/argo-deploys/stateless/ci/gitea-runner`), because it does not need to have anything persistent. As of Gitlab runner, I could do the same as Gitea Runner, but since the Gitlab's Helm chart (`infrastructure/helm-charts/source-control/gitlab`) has the possibility to configure a Gitlab Runner, I decided to go that way for simplicity.
 
 ## Jenkins
 
 ### Creating the Jenkins helm chart
 
-The Jenkins project has an [official helm chart](https://github.com/jenkinsci/helm-charts). My chart on my [homelab repository](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateful/ci/jenkins) is based on that and then I override some values. As is, my Helm chart deploys Jenkins without any executors (builds run on Kubernetes agents), the admin credentials can be either from an existing Secret or from variables on values file, it has no TLS, and `http://jenkins.internal` is exposed through the Traefik ingress.
+The Jenkins project has an [official helm chart](https://github.com/jenkinsci/helm-charts). My chart on my [homelab repository](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateful/ci/jenkins) is based on that and then I override some values. As is, the Helm chart deploys Jenkins without any executors (builds run on Kubernetes agents), the admin credentials can be either from an existing Secret or from variables on values file, it has no TLS, is accessed through `http://jenkins.internal` and installs the Vault plugin so it can define job variables from OpenBao's secrets.
 
 ### Deploying Jenkins on the kubernetes cluster
 
@@ -179,13 +208,9 @@ kubectl --kubeconfig ~/.kube/homelab_cluster01 get pods -n jenkins
 
 ### Accessing Jenkins
 
-On the browser, accessed Jenkins thorugh the URL `http://jenkins.internal`. To login I used the credentials created by the secret mentioned on the previous section.
+On the browser, accessed Jenkins through the URL `http://jenkins.internal`. To login I used the credentials created by the secret mentioned on the previous section.
 
-![Jenkins login](./images/9-ci-3.png)
-
-### Initial Jenkins configuration
-
-There are a few configurations I want to make on Jenkins before creating Pipelines or Jobs. Jenkins has a feature called JCasC, Jenkins Configuration as Code, and I could define these configurations on the values file, but because I want to keep the Helm chart as clean and generic as possible, except for the endpoints or some specific configuration, I decided to create those files on the side and then use Ansible to apply them after Jenkins is created. That way, I also use Ansible a bit more and I think it is a good use case .
+![Jenkins login](./images/9-ci-3.png) .
 
 ### Creating a simple pipeline on Jenkins
  
@@ -211,93 +236,126 @@ To check the output, clicked on that entry and then on `Console Output` to see t
 
 ## GitLab Runner
 
-### Creating the GitLab Runner helm chart
+For Gitlab Runners, there are two ways I can create them on the cluster.
 
-GitLab has an [official helm chart for the runner](https://docs.gitlab.com/runner/install/kubernetes/). My chart is on [infrastructure/helm-charts/argo-deploys/stateless/ci/gitlab-runner](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateless/ci/gitlab-runner). The main changes from the default values are:
+I could use a Helm chart based on the [official helm chart for Gitlab Runner](https://docs.gitlab.com/runner/install/kubernetes/) and be it independent from Gitlab Helm chart. That way, every change to Gitlab Runner's configuration or Gitlab's configuration, will be updated independently. 
 
- - It connects to GitLab through the internal service (`gitlab-webservice-default.gitlab.svc.cluster.local:8181`), the same one that ArgoCD uses to clone the repositories, instead of going out and back in through the reverse proxy.
- - It uses the Kubernetes executor. Like Jenkins' agents, each job runs in its own pod, in the `gitlab-runner` namespace.
- - The jobs clone the repository through the internal service as well (`clone_url`), because the job pods cannot resolve `gitlab.internal`. That name only exists on the `/etc/hosts` of my computer. For the same reason, the job pods have a host alias that points `harbor.internal`, `gitea.internal` and `registry.gitlab.internal` to a k3s node, where Traefik routes by hostname. This will be needed when the jobs push images to the registry.
- - The runner token comes from an existing Secret.
- - `concurrent` limits the jobs running at the same time, because each job is a pod and the cluster is small.
+Another way, is using the Gitlab Helm Chart used to deploy Gitlab on the cluster. On the values file, there is the option to create the runners automatically. It is a simpler approach, but The downside is that if I want to change some configuration on the runner, I have to update the Gitlab Helm chart, which causes some downtime on Gitlab.
+
+For simplicity, I choose the second approach, unless I decide later that I want to use Gitlab as the git server and Gitlab Runners as the CI tool.
 
 ### Deploying the GitLab Runner on the kubernetes cluster
 
-On GitLab, go to `Admin Area` -> `CI/CD` -> `Runners` and click on `Create instance runner`. Fill the tags (for example `homelab`) and create it. GitLab shows a runner authentication token that starts with `glrt-`. Copy it, it is shown only once.
+To enable the Runner, I did the following changes to the values file, which is located on `infrastructure/helm-charts/source-control/gitlab/values.yaml` of my [Homelab repository](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/source-control/gitlab/values.yaml):
 
-> **TODO (me):** screenshot of the runner creation page on GitLab (hide the token!), as `./images/9-ci-3.png`.
+```yaml
+gitlab:
+  .
+  .
+  .
+  gitlab-runner:
+    install: true
 
-Then create the namespace and the Secret with the token. From the `management-node`:
+    # Connect through the internal service
+    gitlabUrl: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/
 
-```bash
-kubectl create namespace gitlab-runner --kubeconfig ~/.kube/homelab_cluster01
+    # Max number of jobs running at the same time.
+    # Each job is a pod, so for a homelab doesn't need much.
+    concurrent: 2
 
-kubectl create secret generic gitlab-runner-token -n gitlab-runner --kubeconfig ~/.kube/homelab_cluster01 \
-  --from-literal=runner-token=<glrt-token> \
-  --from-literal=runner-registration-token=""
+    # Create the RBAC resources for the runner.
+    rbac:
+      create: true
+
+    runners:
+      config: |
+        [[runners]]
+          # Jobs clone the repository through the internal service.
+          clone_url = "http://gitlab-webservice-default.gitlab.svc.cluster.local:8181"
+          [runners.kubernetes]
+            namespace = "{{.Release.Namespace}}"
+            image = "alpine:3.20"
+            privileged = false
+            [[runners.kubernetes.host_aliases]]
+              ip = "192.168.1.100"
+              hostnames = ["gitlab.internal", "harbor.internal", "openbao.internal", "registry.gitlab.internal"]
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
 ```
 
-Finally copy the [GitLab Runner folder with the helm chart](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateless/ci/gitlab-runner) to the repository that ArgoCD is watching. As it is stateless, I copied it to Gitea's repository, to `infrastructure/helm-charts/argo-deploys/stateless/ci/gitlab-runner`.
-
-Confirm the pod is running and that the runner appears as online on GitLab:
+Because the runner is part of the GitLab Helm chart, deploying it means upgrading the GitLab release. From the `management-node`, inside the GitLab chart folder:
 
 ```bash
-kubectl --kubeconfig ~/.kube/homelab_cluster01 get pods -n gitlab-runner
+cd infrastructure/helm-charts/source-control/gitlab
+helm upgrade gitlab . --kubeconfig ~/.kube/homelab_cluster01 --namespace gitlab
 ```
 
-> **TODO (me):** write down how long it took until the runner pod was `Ready`, and a screenshot of the runner online on GitLab, as `./images/9-ci-4.png`.
+This restarts some GitLab pods, so GitLab is unavailable for a few minutes. Confirm the runner pod is running by running the command below on the `management-node`:
 
-### Creating the pipeline on GitLab
+```bash
+kubectl --kubeconfig ~/.kube/homelab_cluster01 get pods -n gitlab | grep runner
+```
 
-Add a `.gitlab-ci.yml` file to a repository on GitLab. The pipeline of my simple example is:
+If it is running, to confirm on Gitlab UI that the runner appears as online on GitLab, I navigated to `Admin` button on the top left and then clicked on `CI/CD` -> `Runners` from the left menu.
+
+![GitLab runner online](./images/9-ci-9.png)
+
+### Creating a simple pipeline on GitLab
+
+Since I already created a sample repository on GitLab to test it out (check ([Preparing a simple CI pipeline](#preparing-a-simple-ci-pipeline-on-gitlab)), I just need to create a `.gitlab-ci.yml` file on the repository. The pipeline of my simple example is similar to the one used on [Jenkins](#jenkins), meaning that it starts a pod with the same image and outputs the hostname.
 
 ```yaml
 stages:
-  - test
+  - main
 
-test:
-  stage: test
-  image: alpine:3.20
-  tags:
-    - homelab
+main:
+  stage: main
+  image:
+    name: ubuntu
+    kubernetes:
+      user: "1000"
+  retry: 2
   script:
-    - echo "Hello from $(hostname)"
-    - uname -a
+    - hostname
 ```
 
-> **TODO (me):** screenshot of the pipeline run, as `./images/9-ci-5.png`, and how long the pipeline took.
+When the file is uploaded to the repository, the pipeline starts automatically. To check the pipelines on the repository, I navigated to the `Build -> Pipelines` link on the left menu.
 
-## Gitea Actions runner
+![GitLab pipeline run](./images/9-ci-10.png)
 
-### Enabling Gitea Actions
+Then to check the output, clicked on the stages to show all the stages and clicked on the one I wanted to see the details of the job.
 
-Gitea Actions is part of Gitea, but the runner that executes the jobs is a separate application. First, I made sure that Actions is enabled on Gitea. On [infrastructure/helm-charts/source-control/gitea/values.yaml](https://github.com/Joao-Andrade/homelab-devops/blob/v9/infrastructure/helm-charts/source-control/gitea/values.yaml) the value is `gitea.config.actions.ENABLED: true`.
+![GitLab pipeline run console output](./images/9-ci-11.png)
 
-Because Gitea was not deployed with ArgoCD, I needed to re-deploy it manually with the helm commands. From the `management-node`, with the repository cloned:
+## Gitea Runner
 
-```bash
-cd infrastructure/helm-charts/source-control/gitea
-helm dependency update
-helm upgrade gitea . --kubeconfig ~/.kube/homelab_cluster01 --namespace gitea --wait
-```
-
-### Creating the Gitea Actions runner helm chart
-
-Gitea has an [official helm chart for the Actions runner](https://gitea.com/gitea/helm-actions). My chart is on [infrastructure/helm-charts/argo-deploys/stateless/ci/gitea-runner](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateless/ci/gitea-runner). The main changes from the default values are:
+The Gitea Runner project has an [official Gitea Actions Runner Helm chart](https://gitea.com/gitea/helm-actions). My chart on my [homelab repository](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateless/ci/gitea-runner) is based on that and then I override some values. The relevant information to notice are:
 
  - It connects to Gitea through the internal service (`gitea-http.gitea.svc.cluster.local:3000`).
- - The registration token comes from an existing Secret.
- - The runner pod has two containers: the runner itself and a Docker-in-Docker sidecar, which is the one that runs the job containers. The Docker-in-Docker container runs privileged, which is a security trade-off that I accept on a homelab, but that I would think about twice in a shared environment.
+ - The registration token comes from an existing Secret `gitea-runner-token`.
+ - The runner pod has two containers: the runner itself and a Docker-in-Docker sidecar, which is the one that runs the job containers. The Docker-in-Docker container runs privileged, which is a security trade-off that I accept on a homelab, but that should be reevaluated on a production environment.
  - Like on the GitLab Runner, the host aliases so the job containers can resolve the `*.internal` names.
  - Resource requests and limits for both containers.
 
-### Deploying the Gitea Actions runner on the kubernetes cluster
+### Creating the registration token secret
 
-On Gitea go to `Site Administration` -> `Actions` -> `Runners` and click on `Create new runner`. Copy the registration token.
+The runner registration token is not stored on the values file, so it is not on git. In order for the runner to know the registration token, it needs to be a secret on the cluster.
 
-> **TODO (me):** screenshot of the runners page on Gitea (hide the token!), as `./images/9-ci-6.png`.
+To fetch the token, on Gitea, clicked on the profile icon on the top left corner and clicked on `Site Administration`.
 
-Then create the namespace and the Secret with the token. From the `management-node`:
+![Gitea site administration button](./images/9-ci-12.png)
+
+Then on the left side menu, clicked on `Actions` -> `Runners`. On the page near the top to the right, should appear a button `Create new runner` if clicked there, should appear the registration token.
+
+![Gitea runners page](./images/9-ci-13.png)
+
+Then from a computer with access to the cluster, created the namespace and the Secret:
 
 ```bash
 kubectl create namespace gitea-runner --kubeconfig ~/.kube/homelab_cluster01
@@ -306,95 +364,106 @@ kubectl create secret generic gitea-runner-token -n gitea-runner --kubeconfig ~/
   --from-literal=runner-token=<registration-token>
 ```
 
-Finally copy the [Gitea runner folder with the helm chart](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateless/ci/gitea-runner) to the repository that ArgoCD is watching, to `infrastructure/helm-charts/argo-deploys/stateless/ci/gitea-runner`.
+### Deploying the Gitea Actions runner on the kubernetes cluster
 
-Confirm the pod is running and that the runner appears as online on Gitea:
+To deploy the Gitea Actions Runner Helm chart, I copied the [Gitea Runner folder with the helm chart](https://github.com/Joao-Andrade/homelab-devops/tree/v9/infrastructure/helm-charts/argo-deploys/stateless/ci/gitea-runner) to the repository that ArgoCD is watching. For my homelab, since it is stateless application, I copied it to Gitea's repository, to `infrastructure/helm-charts/argo-deploys/stateless/ci/gitea-runner`. ArgoCD will notice the folder and deploy it on the cluster.
+
+Once deployed, confirm the pods are running on the cluster:
 
 ```bash
 kubectl --kubeconfig ~/.kube/homelab_cluster01 get pods -n gitea-runner
 ```
 
-> **TODO (me):** write down how long it took until the runner pod was `Ready`, and a screenshot of the runner online on Gitea, as `./images/9-ci-7.png`.
+### Creating a simple workflow on Gitea
 
-### Creating the workflow on Gitea
-
-Add a workflow file, for example `.gitea/workflows/test.yaml`, to a repository on Gitea. The workflow of my simple example is:
+Since I already created a sample repository on Gitea to test it out (check ([Preparing a simple repository on Gitlab and Gitea for CI](#preparing-a-simple-repository-on-gitlab-and-gitea-for-ci)), I just need to create a `.gitea/workflows/test.yaml` file on the repository. The workflow of my simple example is similar to the one used on [Jenkins](#jenkins) and [GitLab](#gitlab), meaning that it starts a pod with the same image and outputs the hostname.
 
 ```yaml
-name: test
+name: main
 on: [push]
+
 jobs:
-  test:
+  main:
     runs-on: ubuntu-latest
+    container:
+      image: ubuntu
+      options: --user 1000
     steps:
-      - run: echo "Hello from $(hostname)"
-      - run: uname -a
+      - name: Main
+        run: hostname
 ```
 
-> **TODO (me):** screenshot of the workflow run, as `./images/9-ci-8.png`, and how long it took.
+To check the pipeline or workflow status, on the repository page, clicked on the `Actions` tab. There it is possible to see all the workflows and their status.
+
+![Gitea Actions workflow run](./images/9-ci-14.png)
+
+From the list, I clicked on the one I wanted to see the details of the job. From the page, it is possibble to see each stage of the workflow and if clicked on any of them, it is possible to see the console output of the job.
+
+![Gitea Actions workflow run console output](./images/9-ci-15.png)
 
 # Comparing the CI tools
 
-In this section I will describe the comparison of the three CI tools. Like in the git servers article, I will compare the resource consumption of each one, and then the experience of using each one.
+In this section I will describe the comparison of the three CI tools. I will compare the resource consumption of each one when idle, create a workflow for each that builds and pushes an image to the registry, while fetching credentials from OpenBao, for example to push to Harbor. I will also take into consideration the complexity of each pipeline or workflow and how easily it integrates with the different registries and git servers (GitLab Runner -> Gitlab, Harbor and Openbao; Gitea Actions Runner -> Gitea, Harbor and Openbao; and Jenkins -> Gitlab, Gitea, Harbor and Openbao).
 
 ## Resource consumption
 
-### Cluster consumption baseline
-
-To evaluate how much RAM and CPU each CI tool uses, I need a baseline. For that, on the management node, I ran the command `kubectl --kubeconfig ~/.kube/homelab_cluster01 top nodes`, which shows the resource usage of each node on the cluster:
+To compare the resource consumption, when Idle, I let Jenkins, Gitlab Runner and Gitea Actions Runner applications running for 1 hour. This doesn't tell much about the performance, as they are idle, but it is interesting to understand how much resources it consumes from the cluster when there is no pipeline or workflow to execute. Since all of them have resource limits configured for when a pipeline or workflow is running, it is not necessary to compare that. To get the resource consumption of the CI tools, I ran the following command from the `management-node`:
 
 ```bash
-# kubectl --kubeconfig ~/.kube/homelab_cluster01 top nodes
+kubectl top pods -A --kubeconfig ~/.kube/homelab_cluster01
 ```
 
-> **TODO (me):** the output of the baseline, with only the applications that are always running (git server, ArgoCD, registry and secrets manager) and the CI tools not deployed. Only one git server at a time, if possible, to be fair.
+This returns the memory and CPU usage by all pods on the cluster. Regarding the registries, here are the results:
 
-### When idle
+| CI Tool | Pod | CPU (cores) | Memory (Mi) |
+|----------|-----|-------------|-------------|
+| Gitea Runner | gitea-runner-runner-0 | 2m | 86Mi |
+| Gitlab Runner | gitlab-gitlab-runner-xxxx-xxxx | 9m | 25Mi |
+| Jenkins | jenkins-0 | 2m | 747Mi |
 
-After deploying each CI tool, I checked the resource usage of its pods after one hour with `kubectl --kubeconfig ~/.kube/homelab_cluster01 top pods -n <namespace>`:
+As it is possible to see, Jenkins consumes way more memory than Gitea Runner or Gitlab Runner, but that is not suprising, as Jenkins is a full application while Gitea Runner and Gitlab Runner are only the runners of each git server. The better comparison with Jenkins would be against both Git runners and git Servers, although that would not be entirely fair as well, because they serve different purposes, while having a part dedicated to running pipelines.
 
-> **TODO (me):** fill the table with the sum of the pods of each namespace.
+Since I already have the resource consumption of Gitlab and Gitea from the previous article about [Comparing Gitlab vs Gitea](./5-Git_gitlab_vs_gitea.md#resource-consumption-baselines), I can estimate how much resources each Git consumes with it's Runner (I could use the last article where I have the comsumption of each Git server with the registry enabled, but because  it is possible that I use Harbor instead, I cannot take that into account here).
 
-| CI tool | Namespace | Pods | CPU (cores) | Memory (Mi) |
-|---------|-----------|------|-------------|-------------|
-| Jenkins | jenkins | jenkins-0 | TODO | TODO |
-| GitLab Runner | gitlab-runner | gitlab-runner-xxxx | TODO | TODO |
-| Gitea Actions runner | gitea-runner | gitea-runner-actions-0 (runner + dind) | TODO | TODO |
+| Tool | CPU (cores) | Memory (Mi) |
+|----------|-------------|-------------|
+| Gitea and Gitea Runner | 10m | 207Mi |
+| Gitlab and Gitlab Runner | 150m | 3108Mi |
+| Jenkins | 2m | 747Mi |
 
-Of course, the GitLab Runner and the Gitea Actions runner only make sense with their git server, and they only run the jobs, while Jenkins also has the web UI and the scheduling logic. On the other hand, GitLab and Gitea also have to do the scheduling and the UI of the CI on their side, so it is also interesting to compare the consumption of the git servers from the previous article with and without the CI enabled.
+Now the results are a bit different. Gitlab consumes way more resources than Gitea and Jenkins, while Gitea continues to be the most resource-efficient package. But that does not decide anything, I need to compare next how easy it is to create pipelines or workflows, the steps to integrate with the git servers and their registries (for Jenkins), Harbor registry and OpenBao and which tool has the better experience, for my homelab.
 
-### While running a pipeline
+## Simple workflow on each tool
 
-I ran the same simple pipeline on each tool, and checked the pods and the consumption while the job was running:
+On the previous section about [Deploying each CI tool on the cluster](#deploying-the-ci-tools-on-my-homelab), I created a simple workflow that runs a pod with the same image and outputs the hostname. Because it is a very simple workflow, all of them were relativly easy to configure.
 
-```bash
-kubectl --kubeconfig ~/.kube/homelab_cluster01 top pods -A
-```
+## How many pods each workflow / pipeline creates
 
-> **TODO (me):** the consumption during the run, and how long each pipeline took (from the push to the end of the job). Also note the time it took to start the job, as the Kubernetes agents and the job pods need to be created and the image pulled.
+This is completly configurable when deploying each Runner and Jenkins, meaning a pipeline can start one or more pods, depending on the configuration that can be changed on the Helm chart values file of each CI tool.
 
-| CI tool | Time to start the job | Total pipeline time | Peak CPU | Peak memory |
-|---------|-----------------------|---------------------|----------|-------------|
-| Jenkins | TODO | TODO | TODO | TODO |
-| GitLab Runner | TODO | TODO | TODO | TODO |
-| Gitea Actions runner | TODO | TODO | TODO | TODO |
+## Integration with other tools
 
-## Features and experience
+On this section I will explain the steps necessary to integrate each CI tool to other tools on the cluster. This means that Jenkins needs to be able to connect to Harbor, OpenBao and Gitlab's and Gitea's repositories and registries. Gitlab Runner and Gitea Actions Runner need to be able to connect to Harbor, OpenBao and the respective Gitlab/Gitea's repositories and registries.
 
-Some of these differences come from how each tool works, and others from my experience using them in this homelab:
+To facilitate this section, on the [Pre requisites](#pre-requisites) section, I already prepared OpenBao's approles and Harbor's robot accounts for each CI tool as well as Gitlab and Gitea tokens for Jenkins to access their repositories and registries.
 
-| | Jenkins | GitLab CI / Runner | Gitea Actions / runner |
-|---|---------|--------------------|------------------------|
-| Pipeline definition | `Jenkinsfile` (Groovy) | `.gitlab-ci.yml` (YAML) | `.gitea/workflows/*.yaml` (YAML, GitHub Actions syntax) |
-| Where the jobs run | Kubernetes agent pods, created by the Kubernetes plugin | Job pods, created by the Kubernetes executor | Containers started by the Docker-in-Docker sidecar of the runner pod |
-| Needs a specific git server | No | GitLab | Gitea |
-| Extensibility | More than 2000 plugins | Templates and includes | GitHub Actions marketplace actions (`uses:`), compatible with most of them |
-| Needs privileged containers to build images | TODO | TODO | Yes, the Docker-in-Docker sidecar runs privileged |
-| Configuration stored in | Jenkins home (a volume) and optionally as code | The repository | The repository |
-| Effort to set up | TODO | TODO | TODO |
-| UI | TODO | TODO | TODO |
+### Jenkins integration to other tools
 
-> **TODO (me):** fill the TODO cells with my experience, and add anything that surprised me (errors, workarounds, things that were harder than expected).
+In order to Jenkins to be able to connect to Harbor, OpenBao and Gitlab's and Gitea's repositories and registries, it needs to have the necessary credentials and permissions to access them. I will describe how to configure each integration.
+
+#### Jenkins integration to each Git server
+
+
+
+
+
+
+### Gitlab Runner integration to other tools
+
+### Gitea integration to other tools
+
+## Workflow that builds and pushes images to registry
+
 
 ## Conclusion
 
@@ -408,7 +477,7 @@ I will not make the final decision in this article, because it depends on the co
 
 # Cleaning up the CI tools
 
-The steps are similar for the three tools. Because the charts are deployed via ArgoCD, first remove the folder from the repository and wait for ArgoCD to sync. The stateless charts (GitLab Runner and Gitea runner) are fully removed by ArgoCD, except the namespace and the Secret I created by hand, but Jenkins is stateful, so ArgoCD removes the application but leaves the resources on the cluster, and they need to be removed by hand.
+The steps are similar for Jenkins and the Gitea Actions runner, which are deployed via ArgoCD: first remove the folder from the repository and wait for ArgoCD to sync. The stateless chart (Gitea runner) is fully removed by ArgoCD, except the namespace and the Secret I created by hand, but Jenkins is stateful, so ArgoCD removes the application but leaves the resources on the cluster, and they need to be removed by hand. The GitLab Runner is part of the GitLab release instead, so it is removed through Helm.
 
 ## Cleaning Jenkins
 
@@ -430,10 +499,13 @@ kubectl --kubeconfig ~/.kube/homelab_cluster01 delete namespace jenkins
 
 ## Cleaning GitLab Runner
 
+The runner is part of the GitLab release, so to remove only the runner set `gitlab-runner.install` back to `false` in the GitLab values file and upgrade:
+
 ```bash
-kubectl --kubeconfig ~/.kube/homelab_cluster01 -n gitlab-runner get all,secrets,configMaps
-kubectl --kubeconfig ~/.kube/homelab_cluster01 delete namespace gitlab-runner
+helm upgrade gitlab . --kubeconfig ~/.kube/homelab_cluster01 --namespace gitlab
 ```
+
+It is removed together with GitLab when GitLab is cleaned (check [Cleaning Gitlab](./5-Git_gitlab_vs_gitea.md)).
 
 Then, on GitLab go to `Admin Area` -> `CI/CD` -> `Runners` and delete the runner, so it does not stay registered. If the `.gitlab-ci.yml` file is not needed anymore, remove it from the repository.
 

@@ -6,8 +6,7 @@
 # registration token is read from the Secret "gitea-runner-token", which is
 # created by hand BEFORE this chart is deployed (check the README).
 #
-# Gitea itself needs Actions enabled (gitea.config.actions.ENABLED in
-# helm-charts/source-control/gitea/values.yaml).
+# Gitea itself needs Actions enabled.
 
 actions:
   enabled: true
@@ -33,7 +32,7 @@ actions:
         hostnames:
           - harbor.internal
           - gitea.internal
-          - registry.gitlab.internal
+          - openbao.internal
 
     runner:
       resources:

@@ -1,0 +1,22 @@
+# GitLab CI equivalent of the Jenkins pipeline: run "hostname" inside a container
+# (on the Kubernetes executor each job is its own pod, so the output is the pod name).
+
+stages:
+  - main
+
+main:
+  stage: main
+  # Jenkins: container "shell" with image ubuntu, running as user 1000
+  image:
+    name: ubuntu
+    # Run as a non-root user (Kubernetes executor, GitLab 17.x or newer). If the
+    # runner rejects this key, set it on the runner instead, in the
+    # "runners.config" of the GitLab values file:
+    #   [runners.kubernetes.pod_security_context]
+    #     run_as_user = 1000
+    kubernetes:
+      user: "1000"
+  # Jenkins: retries 2
+  retry: 2
+  script:
+    - hostname

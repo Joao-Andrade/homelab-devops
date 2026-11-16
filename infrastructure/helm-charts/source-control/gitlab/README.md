@@ -1,8 +1,10 @@
 # gitlab
 
-This chart uses as a base the [official GitLab Helm chart](https://docs.gitlab.com/charts/), (chart `9.11.12`, GitLab `18.11`). It disables some optional services like GitLab Agent Server for Kubernetes, GitLab Pages, Reply by email, Nginx Ingress controller, CI Runner, Prometheus, Toolbox, Mailroom, GitLab exporter and Spamcheck. The Container Registry is enabled (`gitlab.registry.enabled`), reachable on `registry.gitlab.internal`.
+This chart uses as a base the [official GitLab Helm chart](https://docs.gitlab.com/charts/), (chart `9.11.12`, GitLab `18.11`). It disables some optional services like GitLab Agent Server for Kubernetes, GitLab Pages, Reply by email, Nginx Ingress controller, Prometheus, Toolbox, Mailroom, GitLab exporter and Spamcheck. The Container Registry is enabled (`gitlab.registry.enabled`), reachable on `registry.gitlab.internal`.
 
 All the toggles (what's enabled/disabled) live in [`values.yaml`](./values.yaml), commented.
+
+The CI runner bundled with the chart is enabled (`gitlab-runner.install: true`, Kubernetes executor, one pod per job). It registers itself on this GitLab, so no token has to be created by hand. Changing it needs a `helm upgrade`, which restarts GitLab pods.
 
 ## First-time setup
 
